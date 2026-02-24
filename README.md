@@ -1,15 +1,13 @@
 ```
- ___________  _______  __   __  __       _______
-|           ||   _   ||  | |  ||  |     |   _   |
-|___     ___||  |_|  ||  |_|  ||  |     |  |_|  |
-    |   |    |       ||       ||  |     |       |
-    |   |    |       ||       ||  |___  |       |
-    |   |    |   _   ||   _   ||      | |   _   |
-    |___|    |__| |__||__| |__||______| |__| |__|
-              LATENTIUM
+ _   _   ___  _____ _   _ ____      _    _     ___ ____
+| \ | | / _ \|_   _| | | |  _ \    / \  | |   |_ _/ ___|
+|  \| || |_| | | | | | | | |_) |  / _ \ | |    | |\___ \
+| |\  ||  _  | | | | |_| |  _ <  / ___ \| |___ | | ___) |
+|_| \_||_| |_| |_|  \___/|_| \_\/_/   \_\_____|___|____/
+                  F U T U R A
 ```
 
-# TABULA LATENTIUM -- Map of Hidden Things
+# NATURALIS FUTURA
 
 > *"Every danger that advanced AI systems could pose to humanity has already appeared, in some form, in nature, myth, or story."*
 

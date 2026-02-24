@@ -1,7 +1,7 @@
 {
-  "name": "tabula-latentium",
+  "name": "naturalis-futura",
   "version": "1.0.0",
-  "description": "TABULA LATENTIUM — Map of Hidden Things: An interactive cartographic interface mapping AI threats through myth, nature, and science fiction",
+  "description": "NATURALIS FUTURA — A Bestiary of AI Risk: An interactive cartographic interface mapping AI threats through myth, nature, and science fiction",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

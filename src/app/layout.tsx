@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TABULA LATENTIUM — Map of Hidden Things",
+  title: "NATURALIS FUTURA — A Bestiary of AI Risk",
   description:
-    "An interactive cartographic interface mapping the territory of AI threats through myth, nature, and science fiction. Every danger that advanced AI systems could pose to humanity has already appeared, in some form, in nature, myth, or story.",
+    "An interactive cartographic bestiary mapping AI threats through myth, nature, and science fiction. Every danger that advanced AI systems could pose to humanity has already appeared, in some form, in nature, myth, or story.",
 };
 
 export default function RootLayout({

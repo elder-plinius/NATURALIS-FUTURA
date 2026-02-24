@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   return NextResponse.json({
-    message: "TABULA LATENTIUM Submission Portal",
+    message: "NATURALIS FUTURA Submission Portal",
     endpoints: {
       "POST /api/submissions": "Submit a new creature proposal",
     },

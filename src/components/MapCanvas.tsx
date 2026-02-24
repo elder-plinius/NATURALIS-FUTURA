@@ -225,7 +225,7 @@ export default function MapCanvas({
               className="title-inscription text-3xl md:text-5xl lg:text-6xl font-bold tracking-[0.15em] text-ink mb-8"
               style={{ fontFamily: "var(--font-display)", animationDelay: "0.5s" }}
             >
-              TABULA LATENTIUM
+              NATURALIS FUTURA
             </h1>
             <p
               className="text-sm md:text-base text-ink-light leading-relaxed opacity-0 animate-[fade-in-up_1s_ease-out_2s_forwards]"

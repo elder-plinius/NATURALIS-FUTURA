@@ -452,7 +452,7 @@ export const watchSources: WatchSource[] = [
     type: "community",
     icon: "🌐",
     description:
-      "Submissions from the TABULA LATENTIUM community — new creature proposals, evidence reports, wild sightings.",
+      "Submissions from the NATURALIS FUTURA community — new creature proposals, evidence reports, wild sightings.",
     active: true,
     signalCount: 0,
   },
