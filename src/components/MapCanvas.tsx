@@ -55,7 +55,7 @@ function CreatureNode({
       >
         {creature.icon}
       </span>
-      <span className="text-[10px] md:text-xs font-bold text-ink whitespace-nowrap drop-shadow-[0_1px_2px_rgba(245,240,225,0.8)] tracking-wide">
+      <span className="text-xs md:text-xs font-bold text-ink whitespace-nowrap drop-shadow-[0_1px_2px_rgba(245,240,225,0.8)] tracking-wide">
         {creature.name.replace("THE ", "")}
       </span>
     </button>
@@ -94,7 +94,7 @@ function RegionOverlay({
         >
           {region.name}
         </h3>
-        <p className="text-[9px] md:text-[10px] text-ink-light opacity-70 mt-0.5">
+        <p className="text-xs md:text-xs text-ink-light opacity-70 mt-0.5">
           {region.subtitle}
         </p>
       </div>
@@ -211,7 +211,7 @@ export default function MapCanvas({
             <span className="text-3xl md:text-4xl drop-shadow-[0_0_12px_rgba(234,179,8,0.5)]">
               {hope.icon}
             </span>
-            <span className="text-[10px] md:text-xs font-bold text-amber-800 whitespace-nowrap tracking-wide">
+            <span className="text-xs md:text-xs font-bold text-amber-800 whitespace-nowrap tracking-wide">
               {hope.name.replace("THE ", "")}
             </span>
           </div>

@@ -79,7 +79,7 @@ export default function SignalFeed({ signals, onSelectCreature }: SignalFeedProp
           <button
             key={src}
             onClick={() => setSourceFilter(src)}
-            className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] transition-colors ${
+            className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
               sourceFilter === src
                 ? "bg-ink text-parchment"
                 : "text-ink-light hover:bg-ink/5"
@@ -139,10 +139,10 @@ export default function SignalFeed({ signals, onSelectCreature }: SignalFeedProp
 
                     {/* Meta row */}
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className="text-[10px] text-ink-light">
+                      <span className="text-xs text-ink-light">
                         {signal.sourceLabel}
                       </span>
-                      <span className="text-[10px] text-ink-light">
+                      <span className="text-xs text-ink-light">
                         {new Date(signal.date).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
@@ -150,7 +150,7 @@ export default function SignalFeed({ signals, onSelectCreature }: SignalFeedProp
                         })}
                       </span>
                       <span
-                        className={`text-[9px] px-1.5 py-0.5 rounded-full ${verificationColors[signal.verification]}`}
+                        className={`text-xs px-1.5 py-0.5 rounded-full ${verificationColors[signal.verification]}`}
                       >
                         {signal.verification}
                       </span>
@@ -169,7 +169,7 @@ export default function SignalFeed({ signals, onSelectCreature }: SignalFeedProp
                   {/* Related creatures */}
                   {signal.relatedCreatures.length > 0 && (
                     <div className="mt-3">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-ink-light">
+                      <span className="text-xs font-bold uppercase tracking-widest text-ink-light">
                         Creatures affected
                       </span>
                       <div className="flex flex-wrap gap-1 mt-1">
@@ -183,7 +183,7 @@ export default function SignalFeed({ signals, onSelectCreature }: SignalFeedProp
                                 e.stopPropagation();
                                 onSelectCreature(cid);
                               }}
-                              className="flex items-center gap-1 px-2 py-0.5 rounded bg-ink/5 hover:bg-ink/10 transition-colors text-[10px]"
+                              className="flex items-center gap-1 px-2 py-0.5 rounded bg-ink/5 hover:bg-ink/10 transition-colors text-xs"
                             >
                               <span>{creature.icon}</span>
                               <span className="font-medium">{creature.name}</span>
@@ -200,7 +200,7 @@ export default function SignalFeed({ signals, onSelectCreature }: SignalFeedProp
                       {signal.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="text-[9px] px-1.5 py-0.5 rounded bg-ink/5 text-ink-light"
+                          className="text-xs px-1.5 py-0.5 rounded bg-ink/5 text-ink-light"
                         >
                           #{tag}
                         </span>
@@ -214,7 +214,7 @@ export default function SignalFeed({ signals, onSelectCreature }: SignalFeedProp
                       href={signal.sourceUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 mt-2 text-[10px] text-abyss-accent hover:underline"
+                      className="inline-flex items-center gap-1 mt-2 text-xs text-abyss-accent hover:underline"
                     >
                       View source ↗
                     </a>

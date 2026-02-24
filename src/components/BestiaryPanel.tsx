@@ -137,7 +137,7 @@ export default function BestiaryPanel({
           ) : (
             <div
               className="text-sm leading-relaxed text-ink p-3 rounded-lg bg-ink/[0.03] border border-ink/5"
-              style={{ fontFamily: "var(--font-mono)", fontSize: "12px" }}
+              style={{ fontFamily: "var(--font-mono)", fontSize: "13px" }}
             >
               {creature.technicalSpec}
             </div>

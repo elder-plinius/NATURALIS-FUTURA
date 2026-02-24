@@ -151,7 +151,7 @@ export default function ThreatDashboard({
                 ? "🔶 Elevated"
                 : "🟢 Stable"}
           </div>
-          <div className="text-[9px] text-ink-light mt-0.5">Threat Level</div>
+          <div className="text-xs text-ink-light mt-0.5">Threat Level</div>
         </div>
       </div>
 
@@ -170,7 +170,7 @@ export default function ThreatDashboard({
             <span>{tab.icon}</span>
             <span>{tab.label}</span>
             {tab.id === "signals" && stats.newSignals > 0 && (
-              <span className="w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] flex items-center justify-center signal-pulse">
+              <span className="w-4 h-4 rounded-full bg-amber-500 text-white text-xs flex items-center justify-center signal-pulse">
                 {stats.newSignals}
               </span>
             )}
@@ -191,7 +191,7 @@ export default function ThreatDashboard({
                 >
                   THREAT RADAR
                 </h3>
-                <p className="text-[10px] text-ink-light mb-4">
+                <p className="text-xs text-ink-light mb-4">
                   Signal intensity by region. Larger, brighter blips indicate more
                   active research signals. Pulsing sectors have critical-strength
                   signals.
@@ -230,7 +230,7 @@ export default function ThreatDashboard({
               >
                 SIGNAL FEED
               </h3>
-              <p className="text-[10px] text-ink-light mb-4">
+              <p className="text-xs text-ink-light mb-4">
                 All incoming signals from research papers, lab reports, government
                 publications, incidents, and community reports.
               </p>
@@ -251,7 +251,7 @@ export default function ThreatDashboard({
               >
                 EVOLUTION TIMELINE
               </h3>
-              <p className="text-[10px] text-ink-light mb-6">
+              <p className="text-xs text-ink-light mb-6">
                 How creatures have changed status as new evidence emerges. The
                 bestiary is alive — theoretical threats become confirmed ones.
               </p>
@@ -285,7 +285,7 @@ export default function ThreatDashboard({
 
                           <div className="rounded-lg border border-ink/10 bg-parchment-dark/30 p-3">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-[10px] font-mono text-ink-light">
+                              <span className="text-xs font-mono text-ink-light">
                                 {new Date(event.date).toLocaleDateString(
                                   "en-US",
                                   {
@@ -298,7 +298,7 @@ export default function ThreatDashboard({
                               {event.fromStatus && (
                                 <div className="flex items-center gap-1">
                                   <StatusBadge status={event.fromStatus} />
-                                  <span className="text-ink-light text-[10px]">
+                                  <span className="text-ink-light text-xs">
                                     →
                                   </span>
                                   <StatusBadge status={event.toStatus} />
@@ -318,7 +318,7 @@ export default function ThreatDashboard({
                               </span>
                             </button>
 
-                            <p className="text-[11px] text-ink leading-relaxed">
+                            <p className="text-xs text-ink leading-relaxed">
                               {event.trigger}
                             </p>
                           </div>
@@ -340,7 +340,7 @@ export default function ThreatDashboard({
               >
                 WATCH SOURCES
               </h3>
-              <p className="text-[10px] text-ink-light mb-6">
+              <p className="text-xs text-ink-light mb-6">
                 The observatory&apos;s telescopes — configured monitors scanning
                 for signals across the research landscape. Each source feeds
                 signals into the bestiary.
@@ -371,10 +371,10 @@ export default function ThreatDashboard({
                         }`}
                       />
                     </div>
-                    <p className="text-[10px] text-ink-light leading-relaxed mb-2">
+                    <p className="text-xs text-ink-light leading-relaxed mb-2">
                       {source.description}
                     </p>
-                    <div className="flex items-center justify-between text-[9px] text-ink-light">
+                    <div className="flex items-center justify-between text-xs text-ink-light">
                       <span>
                         {source.signalCount} signal
                         {source.signalCount !== 1 ? "s" : ""} tracked
@@ -394,7 +394,7 @@ export default function ThreatDashboard({
                         href={source.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 mt-2 text-[10px] text-abyss-accent hover:underline"
+                        className="inline-flex items-center gap-1 mt-2 text-xs text-abyss-accent hover:underline"
                       >
                         Visit ↗
                       </a>
@@ -411,7 +411,7 @@ export default function ThreatDashboard({
                 >
                   HOW THE SCANNER WORKS
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-[11px] text-ink leading-relaxed">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-ink leading-relaxed">
                   <div>
                     <span className="font-bold text-ink">1. Ingest</span>
                     <p className="text-ink-light mt-1">
@@ -474,7 +474,7 @@ function StatCard({
       <div className={`text-lg font-bold ${accent ?? "text-ink"} ${pulse ? "signal-pulse" : ""}`}>
         {icon} {value}
       </div>
-      <div className="text-[9px] text-ink-light uppercase tracking-widest mt-0.5">
+      <div className="text-xs text-ink-light uppercase tracking-widest mt-0.5">
         {label}
       </div>
     </div>
@@ -489,7 +489,7 @@ function StatusBadge({ status }: { status: string }) {
         ? "bg-amber-100 text-amber-800"
         : "bg-gray-100 text-gray-600";
   return (
-    <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${colors}`}>
+    <span className={`text-xs px-1.5 py-0.5 rounded-full ${colors}`}>
       {status}
     </span>
   );

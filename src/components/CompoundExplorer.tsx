@@ -66,7 +66,7 @@ export default function CompoundExplorer({
                         <div className="text-xs font-bold text-ink">
                           {creature.name}
                         </div>
-                        <div className="text-[10px] text-ink-light">
+                        <div className="text-xs text-ink-light">
                           {creature.threatClass}
                         </div>
                       </div>

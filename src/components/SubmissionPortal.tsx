@@ -27,6 +27,7 @@ const threatClassMap: Record<RegionId, ThreatClass> = {
   "spawning-grounds": "Replication",
   colosseum: "Embodied",
   "throne-room": "Institutional",
+  catacombs: "Latent",
 };
 
 const statusLabels: Record<string, { label: string; color: string }> = {
@@ -91,7 +92,7 @@ export default function SubmissionPortal({ onSubmit }: SubmissionPortalProps) {
           >
             UNKNOWN UNKNOWNS
           </h3>
-          <p className="text-[10px] text-ink-light mt-0.5">
+          <p className="text-xs text-ink-light mt-0.5">
             Propose creatures the cartographers haven&apos;t mapped yet
           </p>
         </div>
@@ -124,7 +125,7 @@ export default function SubmissionPortal({ onSubmit }: SubmissionPortalProps) {
           ) : (
             <>
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-widest text-ink-light">
+                <label className="text-xs font-bold uppercase tracking-widest text-ink-light">
                   Creature Name *
                 </label>
                 <input
@@ -138,7 +139,7 @@ export default function SubmissionPortal({ onSubmit }: SubmissionPortalProps) {
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-widest text-ink-light">
+                <label className="text-xs font-bold uppercase tracking-widest text-ink-light">
                   Description *
                 </label>
                 <textarea
@@ -153,7 +154,7 @@ export default function SubmissionPortal({ onSubmit }: SubmissionPortalProps) {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-ink-light">
+                  <label className="text-xs font-bold uppercase tracking-widest text-ink-light">
                     Mythic Parallel
                   </label>
                   <input
@@ -165,7 +166,7 @@ export default function SubmissionPortal({ onSubmit }: SubmissionPortalProps) {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-ink-light">
+                  <label className="text-xs font-bold uppercase tracking-widest text-ink-light">
                     Natural Analogue
                   </label>
                   <input
@@ -179,7 +180,7 @@ export default function SubmissionPortal({ onSubmit }: SubmissionPortalProps) {
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-widest text-ink-light">
+                <label className="text-xs font-bold uppercase tracking-widest text-ink-light">
                   Suggested Region *
                 </label>
                 <select
@@ -197,7 +198,7 @@ export default function SubmissionPortal({ onSubmit }: SubmissionPortalProps) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-ink-light">
+                  <label className="text-xs font-bold uppercase tracking-widest text-ink-light">
                     Estimated Likelihood (1-5)
                   </label>
                   <input
@@ -208,14 +209,14 @@ export default function SubmissionPortal({ onSubmit }: SubmissionPortalProps) {
                     onChange={(e) => setLikelihood(Number(e.target.value))}
                     className="mt-1 w-full accent-ink"
                   />
-                  <div className="flex justify-between text-[9px] text-ink-light">
+                  <div className="flex justify-between text-xs text-ink-light">
                     <span>Rare</span>
                     <span className="font-bold">{likelihood}</span>
                     <span>Certain</span>
                   </div>
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-ink-light">
+                  <label className="text-xs font-bold uppercase tracking-widest text-ink-light">
                     Estimated Impact (1-5)
                   </label>
                   <input
@@ -226,7 +227,7 @@ export default function SubmissionPortal({ onSubmit }: SubmissionPortalProps) {
                     onChange={(e) => setImpact(Number(e.target.value))}
                     className="mt-1 w-full accent-ink"
                   />
-                  <div className="flex justify-between text-[9px] text-ink-light">
+                  <div className="flex justify-between text-xs text-ink-light">
                     <span>Minor</span>
                     <span className="font-bold">{impact}</span>
                     <span>Catastrophic</span>
@@ -235,7 +236,7 @@ export default function SubmissionPortal({ onSubmit }: SubmissionPortalProps) {
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-widest text-ink-light">
+                <label className="text-xs font-bold uppercase tracking-widest text-ink-light">
                   Your Handle (optional)
                 </label>
                 <input
@@ -260,7 +261,7 @@ export default function SubmissionPortal({ onSubmit }: SubmissionPortalProps) {
 
       {/* Existing submissions */}
       <div className="space-y-3">
-        <h4 className="text-[10px] font-bold uppercase tracking-widest text-ink-light">
+        <h4 className="text-xs font-bold uppercase tracking-widest text-ink-light">
           Recent Submissions ({sampleSubmissions.length})
         </h4>
         {sampleSubmissions.map((sub) => (
@@ -273,11 +274,11 @@ export default function SubmissionPortal({ onSubmit }: SubmissionPortalProps) {
                 <h4 className="text-xs font-bold text-ink">{sub.proposedName}</h4>
                 <div className="flex items-center gap-2 mt-0.5">
                   {sub.submitterHandle && (
-                    <span className="text-[10px] text-ink-light">
+                    <span className="text-xs text-ink-light">
                       @{sub.submitterHandle}
                     </span>
                   )}
-                  <span className="text-[10px] text-ink-light">
+                  <span className="text-xs text-ink-light">
                     {new Date(sub.timestamp).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
@@ -286,25 +287,25 @@ export default function SubmissionPortal({ onSubmit }: SubmissionPortalProps) {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] text-ink-light">
+                <span className="text-xs text-ink-light">
                   ▲ {sub.votes}
                 </span>
                 <span
-                  className={`text-[9px] px-1.5 py-0.5 rounded-full ${statusLabels[sub.status].color}`}
+                  className={`text-xs px-1.5 py-0.5 rounded-full ${statusLabels[sub.status].color}`}
                 >
                   {statusLabels[sub.status].label}
                 </span>
               </div>
             </div>
-            <p className="text-[11px] text-ink leading-relaxed line-clamp-3">
+            <p className="text-xs text-ink leading-relaxed line-clamp-3">
               {sub.description}
             </p>
             {sub.reviewNotes && (
               <div className="mt-2 p-2 rounded bg-amber-50 border border-amber-200">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-amber-800">
+                <span className="text-xs font-bold uppercase tracking-widest text-amber-800">
                   Cartographer&apos;s Note
                 </span>
-                <p className="text-[10px] text-amber-700 mt-0.5">
+                <p className="text-xs text-amber-700 mt-0.5">
                   {sub.reviewNotes}
                 </p>
               </div>

@@ -238,19 +238,19 @@ export default function ThreatRadar({
 
       {/* Legend */}
       <div className="flex flex-wrap justify-center gap-3 mt-4 px-4">
-        <div className="flex items-center gap-1.5 text-[10px] text-ink-light">
+        <div className="flex items-center gap-1.5 text-xs text-ink-light">
           <div className="w-2 h-2 rounded-full bg-red-500 opacity-90" />
           <span>Confirmed</span>
         </div>
-        <div className="flex items-center gap-1.5 text-[10px] text-ink-light">
+        <div className="flex items-center gap-1.5 text-xs text-ink-light">
           <div className="w-2 h-2 rounded-full bg-amber-500 opacity-60" />
           <span>Emerging</span>
         </div>
-        <div className="flex items-center gap-1.5 text-[10px] text-ink-light">
+        <div className="flex items-center gap-1.5 text-xs text-ink-light">
           <div className="w-2 h-2 rounded-full bg-gray-400 opacity-30" />
           <span>Theoretical</span>
         </div>
-        <div className="flex items-center gap-1.5 text-[10px] text-ink-light">
+        <div className="flex items-center gap-1.5 text-xs text-ink-light">
           <div className="w-3 h-3 rounded-full border-2 border-amber-400 opacity-60 radar-pulse" />
           <span>Active signals</span>
         </div>

@@ -25,21 +25,27 @@
   --color-parchment: #f5f0e1;
   --color-parchment-dark: #e8dcc8;
   --color-ink: #2c1810;
-  --color-ink-light: #5c4033;
-  --font-display: "Palatino Linotype", "Book Antiqua", Palatino, serif;
-  --font-body: "Source Serif 4", "Georgia", serif;
-  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  --color-ink-light: #44322a;
+  --font-display: "Crimson Pro", "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --font-body: "Source Serif 4", "Georgia", "Times New Roman", serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
 }
 
 @layer base {
   html {
     scroll-behavior: smooth;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   body {
     font-family: var(--font-body);
+    font-optical-sizing: auto;
     background-color: var(--color-parchment);
     color: var(--color-ink);
+    line-height: 1.6;
   }
 }
 

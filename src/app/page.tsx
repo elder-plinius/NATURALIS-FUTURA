@@ -172,7 +172,7 @@ export default function Home() {
             >
               <span>&#x1F50D;</span>
               <span className="hidden md:inline">Search</span>
-              <kbd className="hidden md:inline text-[10px] px-1 py-0.5 rounded bg-ink/5">
+              <kbd className="hidden md:inline text-xs px-1 py-0.5 rounded bg-ink/5">
                 /
               </kbd>
             </button>

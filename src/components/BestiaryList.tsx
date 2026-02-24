@@ -62,7 +62,7 @@ export default function BestiaryList({ onSelectCreature }: BestiaryListProps) {
                           {creature.name}
                         </h4>
                         <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ${
+                          className={`text-xs px-1.5 py-0.5 rounded-full shrink-0 ${
                             creature.currentStatus.status === "confirmed"
                               ? "bg-red-100 text-red-800"
                               : creature.currentStatus.status === "emerging"
@@ -77,14 +77,14 @@ export default function BestiaryList({ onSelectCreature }: BestiaryListProps) {
                         {creature.mythicOrigin.split(".")[0]}.
                       </p>
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="text-[10px] text-ink-light font-mono">
+                        <span className="text-xs text-ink-light font-mono">
                           Risk:{" "}
                           {creature.threatGradient.likelihood +
                             creature.threatGradient.impact +
                             creature.threatGradient.detectability}
                           /15
                         </span>
-                        <span className="text-[10px] text-ink-light">
+                        <span className="text-xs text-ink-light">
                           | Countermeasure: {creature.countermeasure.name}
                         </span>
                       </div>
