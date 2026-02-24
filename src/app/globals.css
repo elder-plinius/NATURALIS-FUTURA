@@ -1,0 +1,248 @@
+@import "tailwindcss";
+
+@theme {
+  --color-abyss-primary: #1a1147;
+  --color-abyss-secondary: #0d0d0d;
+  --color-abyss-accent: #7c3aed;
+  --color-siren-primary: #7f1d1d;
+  --color-siren-secondary: #b45309;
+  --color-siren-accent: #f59e0b;
+  --color-throne-primary: #581c87;
+  --color-throne-secondary: #f5f0e1;
+  --color-throne-accent: #ca8a04;
+  --color-hive-primary: #92400e;
+  --color-hive-secondary: #a16207;
+  --color-hive-accent: #eab308;
+  --color-mirror-primary: #6b7280;
+  --color-mirror-secondary: #374151;
+  --color-mirror-accent: #93c5fd;
+  --color-spawn-primary: #065f46;
+  --color-spawn-secondary: #3f6212;
+  --color-spawn-accent: #06b6d4;
+  --color-colosseum-primary: #991b1b;
+  --color-colosseum-secondary: #4b5563;
+  --color-colosseum-accent: #ea580c;
+  --color-parchment: #f5f0e1;
+  --color-parchment-dark: #e8dcc8;
+  --color-ink: #2c1810;
+  --color-ink-light: #5c4033;
+  --font-display: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --font-body: "Source Serif 4", "Georgia", serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background-color: var(--color-parchment);
+    color: var(--color-ink);
+  }
+}
+
+@layer components {
+  .creature-icon {
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .creature-icon:hover {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 12px rgba(124, 58, 237, 0.5));
+  }
+
+  .region-area {
+    transition: opacity 0.4s ease;
+  }
+
+  .region-area:hover {
+    opacity: 0.9;
+  }
+
+  .fog-overlay {
+    pointer-events: none;
+    animation: fog-drift 20s ease-in-out infinite alternate;
+  }
+
+  .status-breathing {
+    animation: breathe 3s ease-in-out infinite;
+  }
+
+  .status-alert {
+    animation: alert-pulse 1.5s ease-in-out infinite;
+  }
+
+  .compound-line {
+    stroke-dasharray: 8 4;
+    animation: dash-flow 2s linear infinite;
+  }
+
+  .bestiary-panel {
+    backdrop-filter: blur(12px);
+    background: linear-gradient(
+      135deg,
+      rgba(245, 240, 225, 0.95),
+      rgba(232, 220, 200, 0.95)
+    );
+  }
+
+  .title-inscription {
+    animation: carve-in 3s ease-out forwards;
+    opacity: 0;
+  }
+
+  .parchment-card {
+    background: linear-gradient(
+      145deg,
+      var(--color-parchment),
+      var(--color-parchment-dark)
+    );
+    border: 1px solid rgba(44, 24, 16, 0.2);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.4),
+      0 2px 8px rgba(44, 24, 16, 0.15);
+  }
+
+  .threat-gradient-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #065f46, #eab308, #991b1b);
+  }
+
+  /* ── Dashboard: Threat Observatory ── */
+
+  .radar-sweep {
+    animation: radar-rotate 6s linear infinite;
+  }
+
+  .radar-pulse {
+    animation: radar-glow 2s ease-in-out infinite;
+  }
+
+  .signal-pulse {
+    animation: signal-blink 1.5s ease-in-out infinite;
+  }
+
+  .signal-new {
+    animation: signal-arrive 0.6s ease-out;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+@keyframes fog-drift {
+  0% {
+    opacity: 0.7;
+    transform: translateX(-2%) translateY(-1%);
+  }
+  100% {
+    opacity: 0.4;
+    transform: translateX(2%) translateY(1%);
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes alert-pulse {
+  0%,
+  100% {
+    opacity: 0.8;
+    filter: drop-shadow(0 0 4px rgba(234, 88, 12, 0.4));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 12px rgba(234, 88, 12, 0.8));
+  }
+}
+
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@keyframes carve-in {
+  0% {
+    opacity: 0;
+    letter-spacing: 0.3em;
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    letter-spacing: 0.15em;
+    filter: blur(0);
+  }
+}
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Dashboard Animations ── */
+
+@keyframes radar-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes radar-glow {
+  0%,
+  100% {
+    opacity: 0.08;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@keyframes signal-blink {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes signal-arrive {
+  0% {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
