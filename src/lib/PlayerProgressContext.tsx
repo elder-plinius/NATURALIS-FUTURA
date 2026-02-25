@@ -1,9 +1,9 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import type { ReactNode } from "react";
 import type { RegionId } from "@/data/types";
-import { getCreaturesByRegion, regions } from "@/data";
+import { getCreaturesByRegion, regions, allCreatures } from "@/data";
 import type { PlayerState } from "./game-types";
 import {
   DEFAULT_PLAYER_STATE,
@@ -25,9 +25,9 @@ interface PlayerProgressValue {
   discoveryCount: number;
   containmentCount: number;
   totalCreatures: number;
-  // Actions
-  discoverCreature: (id: string) => boolean; // returns true if newly discovered
-  containCreature: (creature: Creature) => number; // returns XP earned
+  // Actions — synchronous checks, no race conditions
+  discoverCreature: (id: string) => boolean;
+  containCreature: (creature: Creature) => number;
   recordBattleLoss: () => void;
   resetProgress: () => void;
 }
@@ -38,6 +38,10 @@ export function PlayerProgressProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PlayerState>(DEFAULT_PLAYER_STATE);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Keep a ref to the current discovered/contained sets for synchronous checks
+  const discoveredRef = useRef<Set<string>>(new Set());
+  const containedRef = useRef<Set<string>>(new Set());
+
   // Load from localStorage on mount
   useEffect(() => {
     try {
@@ -46,6 +50,8 @@ export function PlayerProgressProvider({ children }: { children: ReactNode }) {
         const parsed = JSON.parse(saved) as PlayerState;
         if (parsed.version === 1) {
           setState(parsed);
+          discoveredRef.current = new Set(parsed.discovered);
+          containedRef.current = new Set(parsed.contained);
         }
       }
     } catch {
@@ -60,32 +66,37 @@ export function PlayerProgressProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state, isLoaded]);
 
+  // Keep refs in sync with state
+  useEffect(() => {
+    discoveredRef.current = new Set(state.discovered);
+    containedRef.current = new Set(state.contained);
+  }, [state.discovered, state.contained]);
+
   const discoveredSet = useMemo(() => new Set(state.discovered), [state.discovered]);
   const containedSet = useMemo(() => new Set(state.contained), [state.contained]);
 
-  const totalCreatures = useMemo(() => {
-    let count = 0;
-    for (const r of regions) {
-      count += getCreaturesByRegion(r.id).length;
-    }
-    return count;
-  }, []);
+  const totalCreatures = useMemo(() => allCreatures.length, []);
 
+  // FIX: Use ref for synchronous check, then setState
   const discoverCreature = useCallback((id: string): boolean => {
-    let isNew = false;
+    // Synchronous check against ref — no race condition
+    if (discoveredRef.current.has(id)) return false;
+    // Optimistically update ref so rapid calls don't double-fire
+    discoveredRef.current.add(id);
     setState((prev) => {
       if (prev.discovered.includes(id)) return prev;
-      isNew = true;
       return {
         ...prev,
         discovered: [...prev.discovered, id],
         xp: prev.xp + XP_DISCOVERY,
       };
     });
-    return isNew;
+    return true;
   }, []);
 
   const containCreature = useCallback((creature: Creature): number => {
+    if (containedRef.current.has(creature.id)) return 0;
+    containedRef.current.add(creature.id);
     const xpEarned = calculateContainmentXP(creature);
     setState((prev) => {
       if (prev.contained.includes(creature.id)) return prev;
@@ -93,7 +104,6 @@ export function PlayerProgressProvider({ children }: { children: ReactNode }) {
       const newContainedSet = new Set(newContained);
       let bonusXP = 0;
 
-      // Check region mastery
       const newMastery = { ...prev.regionMastery };
       const regionId = creature.region as RegionId;
       if (!newMastery[regionId] && checkRegionMastery(regionId, newContainedSet)) {
@@ -130,6 +140,8 @@ export function PlayerProgressProvider({ children }: { children: ReactNode }) {
 
   const resetProgress = useCallback(() => {
     const fresh = { ...DEFAULT_PLAYER_STATE, createdAt: new Date().toISOString() };
+    discoveredRef.current = new Set();
+    containedRef.current = new Set();
     setState(fresh);
   }, []);
 

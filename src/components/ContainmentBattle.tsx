@@ -3,7 +3,8 @@
 import { useState, useMemo, useCallback } from "react";
 import type { Creature, ViewMode } from "@/data";
 import { regions } from "@/data";
-import { generateBattleOptions, resolveBattle, fuzzyMatchCountermeasure, getTitle } from "@/lib/game-logic";
+import { generateBattleOptions, resolveBattle, fuzzyMatchCountermeasure, calculateContainmentXP, getTitle } from "@/lib/game-logic";
+import { getCompoundsForCreature } from "@/data";
 import { usePlayerProgress } from "@/lib/PlayerProgressContext";
 import type { BattleResult } from "@/lib/game-types";
 
@@ -27,43 +28,55 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
     [creature, viewMode],
   );
 
+  // Shared battle resolution logic
+  const resolveBattleResult = useCallback((won: boolean, correctLabel: string) => {
+    const xpEarned = won ? calculateContainmentXP(creature) : 0;
+    const currentXP = state.xp; // Snapshot current XP before update
+    const oldTitle = getTitle(currentXP);
+    const newTitle = getTitle(currentXP + xpEarned);
+
+    if (won) {
+      containCreature(creature);
+    } else {
+      recordBattleLoss();
+    }
+
+    // Build compound escalation for wrong answers
+    let compoundEscalation: BattleResult["compoundEscalation"] = undefined;
+    if (!won) {
+      const compounds = getCompoundsForCreature(creature.id);
+      if (compounds.length > 0) {
+        const compound = compounds[Math.floor(Math.random() * compounds.length)];
+        compoundEscalation = { name: compound.name, scenario: compound.scenario };
+      }
+    }
+
+    setResult({
+      won,
+      xpEarned,
+      correctAnswer: { id: creature.id, label: correctLabel, type: "countermeasure" },
+      compoundEscalation,
+      leveledUp: newTitle.title !== oldTitle.title,
+      newTitle: newTitle.title !== oldTitle.title ? newTitle.title : null,
+      regionMastered: null,
+    });
+  }, [creature, state.xp, containCreature, recordBattleLoss]);
+
   const handleSelect = useCallback(
     (index: number) => {
       if (result || !battle) return;
       setSelectedIndex(index);
-
-      const battleResult = resolveBattle(creature, index, battle.correctIndex, battle.options, state.xp);
-
-      if (battleResult.won) {
-        containCreature(creature);
-      } else {
-        recordBattleLoss();
-      }
-
-      setResult(battleResult);
+      const won = index === battle.correctIndex;
+      resolveBattleResult(won, battle.options[battle.correctIndex].label);
     },
-    [result, battle, creature, state.xp, containCreature, recordBattleLoss],
+    [result, battle, resolveBattleResult],
   );
 
   const handleFreeTextSubmit = useCallback(() => {
     if (result) return;
     const won = fuzzyMatchCountermeasure(freeText, creature);
-    const xpEarned = won ? containCreature(creature) : 0;
-    if (!won) recordBattleLoss();
-
-    const oldTitle = getTitle(state.xp);
-    const newTitle = getTitle(state.xp + xpEarned);
-
-    setResult({
-      won,
-      xpEarned,
-      correctAnswer: { id: creature.id, label: creature.countermeasure.name, type: "countermeasure" },
-      compoundEscalation: undefined,
-      leveledUp: newTitle.title !== oldTitle.title,
-      newTitle: newTitle.title !== oldTitle.title ? newTitle.title : null,
-      regionMastered: null,
-    });
-  }, [freeText, result, creature, state.xp, containCreature, recordBattleLoss]);
+    resolveBattleResult(won, creature.countermeasure.name);
+  }, [freeText, result, creature, resolveBattleResult]);
 
   const { likelihood, impact, detectability } = creature.threatGradient;
   const composite = likelihood + impact + detectability;

@@ -13,6 +13,7 @@ import ProgressPanel from "@/components/ProgressPanel";
 import ContainmentBattle from "@/components/ContainmentBattle";
 import DiscoveryAnimation from "@/components/DiscoveryAnimation";
 import { PlayerProgressProvider, usePlayerProgress } from "@/lib/PlayerProgressContext";
+import { usePlayerSprite } from "@/lib/usePlayerSprite";
 import type { Creature, ViewMode } from "@/data";
 
 type ActiveView = "map" | "risk-matrix" | "bestiary" | "compounds" | "dashboard" | "progress";
@@ -31,12 +32,17 @@ function AppContent() {
 
   const { discoveredSet, containedSet, discoverCreature } = usePlayerProgress();
 
+  // Player movement enabled only on map view with no overlays open
+  const movementEnabled = mapRevealed && activeView === "map" && !showSearch && !battleCreature && !discoveryCreature && !selectedCreature;
+  const player = usePlayerSprite(movementEnabled);
+
+  // Click-based creature selection (also triggers discovery)
   const selectCreature = useCallback((creature: Creature | null) => {
     if (creature) {
-      // Trigger discovery if new
       const isNew = discoverCreature(creature.id);
       if (isNew) {
         setDiscoveryCreature(creature);
+        return; // Let discovery animation play first, then open panel
       }
     }
     setSelectedCreature(creature);
@@ -44,6 +50,23 @@ function AppContent() {
       setActiveView("map");
     }
   }, [activeView, discoverCreature]);
+
+  // Proximity-based encounter (walk near creature)
+  const handleEncounter = useCallback((creature: Creature) => {
+    const isNew = discoverCreature(creature.id);
+    if (isNew) {
+      setDiscoveryCreature(creature);
+    }
+  }, [discoverCreature]);
+
+  // After discovery animation completes, open the panel
+  const handleDiscoveryComplete = useCallback(() => {
+    const creature = discoveryCreature;
+    setDiscoveryCreature(null);
+    if (creature) {
+      setSelectedCreature(creature);
+    }
+  }, [discoveryCreature]);
 
   const handleRevealMap = useCallback(() => {
     setMapRevealed(true);
@@ -56,6 +79,8 @@ function AppContent() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
       if (e.key === "Escape") {
         if (battleCreature) {
           setBattleCreature(null);
@@ -98,12 +123,18 @@ function AppContent() {
                   setSelectedRegion(id);
                   setSelectedCreature(null);
                 }}
+                onEncounterCreature={handleEncounter}
                 selectedCreature={selectedCreature}
                 selectedRegion={selectedRegion}
                 showHope={showHope}
                 mapRevealed={mapRevealed}
                 discoveredSet={discoveredSet}
                 containedSet={containedSet}
+                playerX={player.x}
+                playerY={player.y}
+                playerDirection={player.direction}
+                playerMoving={player.isMoving}
+                playerStep={player.step}
               />
             </div>
           )}
@@ -172,7 +203,6 @@ function AppContent() {
           aria-label="Main navigation"
         >
           <div className="flex items-center justify-between max-w-7xl mx-auto gap-2">
-            {/* Left: view switchers */}
             <div className="flex gap-1 md:gap-2">
               {([
                 { id: "map" as ActiveView, label: "Map", icon: "🗺️" },
@@ -201,21 +231,16 @@ function AppContent() {
               ))}
             </div>
 
-            {/* Center: search */}
             <button
               onClick={() => setShowSearch(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-ink-light hover:bg-ink/5 transition-colors border border-ink/10"
             >
               <span>&#x1F50D;</span>
               <span className="hidden md:inline">Search</span>
-              <kbd className="hidden md:inline text-xs px-1 py-0.5 rounded bg-ink/5">
-                /
-              </kbd>
+              <kbd className="hidden md:inline text-xs px-1 py-0.5 rounded bg-ink/5">/</kbd>
             </button>
 
-            {/* Right: controls */}
             <div className="flex items-center gap-2">
-              {/* Hope toggle */}
               <button
                 onClick={() => setShowHope(!showHope)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-colors ${
@@ -231,7 +256,6 @@ function AppContent() {
                 </span>
               </button>
 
-              {/* View mode */}
               <div className="hidden md:flex items-center gap-1 text-xs text-ink-light">
                 {(["novice", "scholar", "cartographer"] as ViewMode[]).map(
                   (mode) => (
@@ -250,7 +274,6 @@ function AppContent() {
                 )}
               </div>
 
-              {/* Status filter for risk matrix */}
               {activeView === "risk-matrix" && (
                 <div className="hidden md:flex items-center gap-1 text-xs">
                   {[null, "confirmed", "emerging", "theoretical"].map((status) => (
@@ -284,7 +307,7 @@ function AppContent() {
         />
       )}
 
-      {/* Containment battle overlay */}
+      {/* Battle overlay */}
       {battleCreature && (
         <ContainmentBattle
           creature={battleCreature}
@@ -293,11 +316,11 @@ function AppContent() {
         />
       )}
 
-      {/* Discovery animation overlay */}
+      {/* Discovery animation */}
       {discoveryCreature && (
         <DiscoveryAnimation
           creature={discoveryCreature}
-          onComplete={() => setDiscoveryCreature(null)}
+          onComplete={handleDiscoveryComplete}
         />
       )}
     </div>
