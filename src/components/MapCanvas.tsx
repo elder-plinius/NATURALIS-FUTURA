@@ -579,26 +579,24 @@ export default function MapCanvas({
         }} />
       )}
 
-      {/* Fog overlay (before map reveal) */}
-      {!mapRevealed && (
-        <div className="absolute inset-0 z-40 bg-gradient-to-b from-[#0e0c0a] via-[#1a1714ee] to-[#0e0c0a] flex items-center justify-center">
-          <div className="text-center max-w-2xl px-8">
-            <h1 className="title-inscription text-3xl md:text-5xl lg:text-6xl font-bold tracking-[0.15em] text-amber-200 mb-8"
-              style={{ fontFamily: "var(--font-display)", animationDelay: "0.5s" }}>
-              NATURALIS FUTURA
-            </h1>
-            <p className="text-sm md:text-base text-amber-200/60 leading-relaxed opacity-0 animate-[fade-in-up_1s_ease-out_2s_forwards]"
-              style={{ fontFamily: "var(--font-body)" }}>
-              The territory beyond human-level intelligence is real. It is
-              approaching. No one has drawn the map.{" "}
-              <em className="text-amber-100">Until now.</em>
-            </p>
-            <p className="mt-6 text-xs text-amber-200/30 opacity-0 animate-[fade-in-up_1s_ease-out_3s_forwards]">
-              Click anywhere to enter the dungeon...
-            </p>
-          </div>
+      {/* Fog overlay — fades out on map reveal */}
+      <div className={`absolute inset-0 z-40 bg-gradient-to-b from-[#0e0c0a] via-[#1a1714ee] to-[#0e0c0a] flex items-center justify-center transition-opacity duration-[2000ms] ease-out ${mapRevealed ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+        <div className="text-center max-w-2xl px-8">
+          <h1 className="title-inscription text-3xl md:text-5xl lg:text-6xl font-bold tracking-[0.15em] text-amber-200 mb-8"
+            style={{ fontFamily: "var(--font-display)", animationDelay: "0.5s" }}>
+            NATURALIS FUTURA
+          </h1>
+          <p className="text-sm md:text-base text-amber-200/60 leading-relaxed opacity-0 animate-[fade-in-up_1s_ease-out_2s_forwards]"
+            style={{ fontFamily: "var(--font-body)" }}>
+            The territory beyond human-level intelligence is real. It is
+            approaching. No one has drawn the map.{" "}
+            <em className="text-amber-100">Until now.</em>
+          </p>
+          <p className="mt-6 text-xs text-amber-200/30 opacity-0 animate-[fade-in-up_1s_ease-out_3s_forwards]">
+            Click anywhere to enter the dungeon...
+          </p>
         </div>
-      )}
+      </div>
 
       {/* WASD hint */}
       {mapRevealed && (
@@ -612,6 +610,21 @@ export default function MapCanvas({
             </div>
           </div>
           <span className="text-[10px] text-amber-200/25 font-mono">MOVE</span>
+        </div>
+      )}
+
+      {/* Proximity warning — something stirs nearby */}
+      {mapRevealed && nearCreatures.size > 0 && (
+        <div className="absolute pointer-events-none" style={{
+          left: "50%",
+          top: "38%",
+          zIndex: 25,
+          animation: "stir-float 3s ease-in-out infinite",
+        }}>
+          <p className="text-sm text-amber-300/50 italic whitespace-nowrap tracking-wider"
+            style={{ fontFamily: "var(--font-display)", textShadow: "0 0 10px rgba(0,0,0,0.9), 0 0 20px rgba(180,130,50,0.15)" }}>
+            Something stirs nearby...
+          </p>
         </div>
       )}
 

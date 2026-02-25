@@ -42,8 +42,12 @@ export interface TitleThreshold {
 
 export const TITLE_THRESHOLDS: TitleThreshold[] = [
   { xp: 0, title: "Novice Cartographer", icon: "🧭" },
+  { xp: 50, title: "Creature Scout", icon: "🔍" },
+  { xp: 120, title: "Threat Analyst", icon: "📋" },
   { xp: 200, title: "Beast Scholar", icon: "📖" },
+  { xp: 350, title: "Field Researcher", icon: "🔬" },
   { xp: 500, title: "Keeper of the Map", icon: "🗝️" },
+  { xp: 750, title: "Master Cartographer", icon: "🗺️" },
   { xp: 1000, title: "Grand Cartographer", icon: "👑" },
 ];
 

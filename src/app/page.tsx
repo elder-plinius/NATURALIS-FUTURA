@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import MapCanvas from "@/components/MapCanvas";
 import BestiaryPanel from "@/components/BestiaryPanel";
 import RiskMatrix from "@/components/RiskMatrix";
@@ -16,6 +16,7 @@ import { PlayerProgressProvider, usePlayerProgress } from "@/lib/PlayerProgressC
 import { usePlayerSprite } from "@/lib/usePlayerSprite";
 import { isBlockedAt } from "@/components/MapCanvas";
 import type { Creature, ViewMode } from "@/data";
+import { regions } from "@/data";
 
 type ActiveView = "map" | "risk-matrix" | "bestiary" | "compounds" | "dashboard" | "progress";
 
@@ -30,12 +31,15 @@ function AppContent() {
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
   const [battleCreature, setBattleCreature] = useState<Creature | null>(null);
   const [discoveryCreature, setDiscoveryCreature] = useState<Creature | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [masteryToast, setMasteryToast] = useState<string | null>(null);
+  const prevMasteredRef = useRef<Set<string> | null>(null);
 
-  const { discoveredSet, containedSet, discoverCreature } = usePlayerProgress();
+  const { state, discoveredSet, containedSet, discoverCreature } = usePlayerProgress();
 
   // Player movement enabled on map view when no full-screen overlays are open
   // Note: selectedCreature does NOT block movement — onMoveStart auto-closes it
-  const movementEnabled = mapRevealed && activeView === "map" && !showSearch && !battleCreature && !discoveryCreature;
+  const movementEnabled = mapRevealed && activeView === "map" && !showSearch && !battleCreature && !discoveryCreature && !showTutorial;
 
   const handleMoveStart = useCallback(() => {
     // Auto-close panels when the player starts walking
@@ -81,6 +85,12 @@ function AppContent() {
 
   const handleRevealMap = useCallback(() => {
     setMapRevealed(true);
+    try {
+      if (!localStorage.getItem("naturalis-futura-tutorial-seen")) {
+        setTimeout(() => setShowTutorial(true), 1500);
+        localStorage.setItem("naturalis-futura-tutorial-seen", "1");
+      }
+    } catch { /* localStorage unavailable */ }
   }, []);
 
   const handleChallenge = useCallback((creature: Creature) => {
@@ -93,7 +103,9 @@ function AppContent() {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       if (e.key === "Escape") {
-        if (battleCreature) {
+        if (showTutorial) {
+          setShowTutorial(false);
+        } else if (battleCreature) {
           setBattleCreature(null);
         } else if (showSearch) {
           setShowSearch(false);
@@ -108,7 +120,27 @@ function AppContent() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showSearch, selectedCreature, battleCreature]);
+  }, [showSearch, selectedCreature, battleCreature, showTutorial]);
+
+  // Detect new region mastery for celebration toast
+  useEffect(() => {
+    const mastered = Object.entries(state.regionMastery)
+      .filter(([, v]) => v)
+      .map(([k]) => k);
+
+    if (prevMasteredRef.current !== null) {
+      for (const regionId of mastered) {
+        if (!prevMasteredRef.current.has(regionId)) {
+          const region = regions.find((r) => r.id === regionId);
+          if (region) {
+            setMasteryToast(region.name);
+            setTimeout(() => setMasteryToast(null), 4000);
+          }
+        }
+      }
+    }
+    prevMasteredRef.current = new Set(mastered);
+  }, [state.regionMastery]);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-parchment">
@@ -333,6 +365,60 @@ function AppContent() {
           creature={discoveryCreature}
           onComplete={handleDiscoveryComplete}
         />
+      )}
+
+      {/* Onboarding tutorial */}
+      {showTutorial && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowTutorial(false)} />
+          <div className="parchment-card rounded-2xl max-w-md w-full relative animate-[battle-appear_0.3s_cubic-bezier(0.34,1.56,0.64,1)] p-6">
+            <h2
+              className="text-lg font-bold text-ink tracking-[0.15em] mb-4 text-center"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              YOUR QUEST BEGINS
+            </h2>
+            <div className="space-y-3 text-sm text-ink/80">
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-lg shrink-0">&#x1F9ED;</span>
+                <p><strong>Explore</strong> &mdash; Use WASD or arrow keys to navigate the dungeon</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-lg shrink-0">&#128270;</span>
+                <p><strong>Discover</strong> &mdash; Walk near creatures to reveal them</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center text-lg shrink-0">&#9876;</span>
+                <p><strong>Battle</strong> &mdash; Choose the right move to defeat threats</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center text-lg shrink-0">&#127942;</span>
+                <p><strong>Master</strong> &mdash; Defeat all creatures in a region to claim mastery</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowTutorial(false)}
+              className="w-full mt-5 py-3 rounded-xl font-bold text-sm tracking-wide bg-ink text-parchment hover:bg-ink/90 transition-all"
+            >
+              BEGIN EXPLORATION
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Region mastery toast */}
+      {masteryToast && (
+        <div className="fixed top-20 z-50 animate-[toast-appear_0.4s_ease-out]" style={{ left: "50%", transform: "translateX(-50%)" }}>
+          <div className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 text-white shadow-lg shadow-amber-500/30 flex items-center gap-3">
+            <span className="text-2xl">&#127942;</span>
+            <div>
+              <p className="text-xs font-bold tracking-widest uppercase" style={{ fontFamily: "var(--font-display)" }}>
+                REGION MASTERED
+              </p>
+              <p className="text-sm font-bold">{masteryToast}</p>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

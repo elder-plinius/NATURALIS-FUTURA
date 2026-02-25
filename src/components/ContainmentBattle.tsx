@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import type { Creature, ViewMode } from "@/data";
 import { regions, allCreatures, hopeCreatures } from "@/data";
 import { generateBattleOptions, fuzzyMatchCountermeasure, calculateContainmentXP, getTitle } from "@/lib/game-logic";
@@ -35,13 +35,14 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
   const [freeText, setFreeText] = useState("");
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [expandedInfo, setExpandedInfo] = useState<number | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const region = regions.find((r) => r.id === creature.region);
   const regionAccent = region?.color.accent ?? "#7c3aed";
 
   const battle = useMemo(
     () => (viewMode === "cartographer" ? null : generateBattleOptions(creature, viewMode)),
-    [creature, viewMode],
+    [creature, viewMode, retryCount],
   );
 
   const resolveBattleResult = useCallback((won: boolean, correctLabel: string) => {
@@ -96,6 +97,28 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
   const toggleInfo = useCallback((index: number, e: React.MouseEvent) => {
     e.stopPropagation();
     setExpandedInfo((prev) => (prev === index ? null : index));
+  }, []);
+
+  // Keyboard shortcuts: 1-4 to select battle options
+  useEffect(() => {
+    if (result || !battle || viewMode === "cartographer") return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      const num = parseInt(e.key);
+      if (num >= 1 && num <= battle.options.length) {
+        handleSelect(num - 1);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [result, battle, handleSelect, viewMode]);
+
+  const handleRetry = useCallback(() => {
+    setResult(null);
+    setSelectedIndex(null);
+    setExpandedInfo(null);
+    setFreeText("");
+    setRetryCount((c) => c + 1);
   }, []);
 
   const { likelihood, impact, detectability } = creature.threatGradient;
@@ -205,7 +228,7 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
               <p className="text-xs text-ink-light mb-4">
                 Select the right technique to defeat this threat.
                 <span className="text-ink/30 ml-1">
-                  Click <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-ink/5 text-[9px] font-bold align-text-bottom">i</span> for details.
+                  Press 1&ndash;{battle?.options.length ?? 4} or click. <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-ink/5 text-[9px] font-bold align-text-bottom">i</span> for details.
                 </span>
               </p>
 
@@ -265,7 +288,7 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
                                 color: regionAccent,
                               }}
                             >
-                              {String.fromCharCode(65 + i)}
+                              {i + 1}
                             </span>
                             {opt.label}
                             {opt.type === "hope-creature" && (
@@ -407,21 +430,35 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
                 />
               )}
 
-              <button
-                onClick={onClose}
-                className="w-full py-3 rounded-xl font-bold text-sm tracking-wide transition-all hover:scale-[1.01] active:scale-[0.99]"
-                style={{
-                  background: result.won
-                    ? `linear-gradient(135deg, #16a34a, #15803d)`
-                    : `linear-gradient(135deg, ${regionAccent}, ${regionAccent}cc)`,
-                  color: "#fff",
-                  boxShadow: result.won
-                    ? "0 4px 14px rgba(22,163,74,0.3)"
-                    : `0 4px 14px ${regionAccent}30`,
-                }}
-              >
-                {result.won ? "CONTINUE EXPLORING" : "RETREAT"}
-              </button>
+              <div className={result.won ? "" : "flex gap-2"}>
+                {!result.won && (
+                  <button
+                    onClick={handleRetry}
+                    className="flex-1 py-3 rounded-xl font-bold text-sm tracking-wide transition-all hover:scale-[1.01] active:scale-[0.99]"
+                    style={{
+                      background: `linear-gradient(135deg, ${regionAccent}, ${regionAccent}cc)`,
+                      color: "#fff",
+                      boxShadow: `0 4px 14px ${regionAccent}30`,
+                    }}
+                  >
+                    RETRY
+                  </button>
+                )}
+                <button
+                  onClick={onClose}
+                  className={`${result.won ? "w-full" : "flex-1"} py-3 rounded-xl font-bold text-sm tracking-wide transition-all hover:scale-[1.01] active:scale-[0.99]`}
+                  style={{
+                    background: result.won
+                      ? "linear-gradient(135deg, #16a34a, #15803d)"
+                      : "linear-gradient(135deg, rgba(44,24,16,0.08), rgba(44,24,16,0.03))",
+                    color: result.won ? "#fff" : "rgba(44,24,16,0.6)",
+                    boxShadow: result.won ? "0 4px 14px rgba(22,163,74,0.3)" : "none",
+                    border: result.won ? "none" : "1px solid rgba(44,24,16,0.12)",
+                  }}
+                >
+                  {result.won ? "CONTINUE EXPLORING" : "RETREAT"}
+                </button>
+              </div>
             </div>
           )}
 

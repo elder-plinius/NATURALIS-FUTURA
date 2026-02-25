@@ -478,3 +478,27 @@
     opacity: 1;
   }
 }
+
+/* ── Proximity & Toast Animations ── */
+
+@keyframes stir-float {
+  0%, 100% {
+    opacity: 0.5;
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateX(-50%) translateY(-4px);
+  }
+}
+
+@keyframes toast-appear {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}

@@ -1,6 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
 import { usePlayerProgress } from "@/lib/PlayerProgressContext";
+import { allCreatures, regions } from "@/data";
 
 export default function PlayerHUD() {
   const {
@@ -10,8 +12,27 @@ export default function PlayerHUD() {
     discoveryCount,
     containmentCount,
     totalCreatures,
+    discoveredSet,
+    containedSet,
     isLoaded,
   } = usePlayerProgress();
+
+  // Find a suggested next target
+  const suggestion = useMemo(() => {
+    // First priority: discovered but not contained (battle it!)
+    const unbattled = allCreatures.find(
+      (c) => discoveredSet.has(c.id) && !containedSet.has(c.id),
+    );
+    if (unbattled) {
+      const r = regions.find((reg) => reg.id === unbattled.region);
+      return { type: "battle" as const, name: unbattled.name.replace("THE ", ""), region: r?.name ?? "" };
+    }
+    // Second: just explore
+    if (discoveryCount < totalCreatures) {
+      return { type: "explore" as const, name: "", region: "" };
+    }
+    return null;
+  }, [discoveredSet, containedSet, discoveryCount, totalCreatures]);
 
   if (!isLoaded) return null;
 
@@ -28,7 +49,7 @@ export default function PlayerHUD() {
           <span>{title.icon}</span>
           <span className="font-bold text-ink hidden sm:inline">{title.title}</span>
           <div className="flex items-center gap-1.5">
-            <div className="w-16 h-1.5 rounded-full bg-ink/10 overflow-hidden">
+            <div className="w-20 h-1.5 rounded-full bg-ink/10 overflow-hidden" title={nextTitle ? `${xpToNext} XP to ${nextTitle.title}` : "Max rank!"}>
               <div
                 className="h-full rounded-full bg-amber-500 transition-all duration-500"
                 style={{ width: `${Math.min(xpProgress, 100)}%` }}
@@ -37,15 +58,31 @@ export default function PlayerHUD() {
             <span className="text-ink-light font-mono text-xs">
               {state.xp} XP
             </span>
+            {nextTitle && (
+              <span className="text-ink/30 font-mono text-[10px] hidden md:inline">
+                ({xpToNext} to {nextTitle.title})
+              </span>
+            )}
           </div>
         </div>
+
+        {/* Suggested next action */}
+        {suggestion && (
+          <div className="hidden lg:flex items-center gap-1.5 text-[10px] text-ink/40 italic">
+            {suggestion.type === "battle" ? (
+              <span>Next: Battle <strong className="text-ink/60 not-italic">{suggestion.name}</strong></span>
+            ) : (
+              <span>Explore to find new creatures...</span>
+            )}
+          </div>
+        )}
 
         {/* Stats */}
         <div className="flex items-center gap-3 text-ink-light">
           <span title="Creatures discovered">
             🔍 {discoveryCount}/{totalCreatures}
           </span>
-          <span title="Creatures contained">
+          <span title="Creatures defeated">
             🛡️ {containmentCount}/{totalCreatures}
           </span>
           {state.battleStats.currentStreak > 1 && (
