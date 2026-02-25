@@ -2,11 +2,11 @@
 
 import { useState, useMemo, useCallback } from "react";
 import type { Creature, ViewMode } from "@/data";
-import { regions } from "@/data";
+import { regions, allCreatures, hopeCreatures } from "@/data";
 import { generateBattleOptions, fuzzyMatchCountermeasure, calculateContainmentXP, getTitle } from "@/lib/game-logic";
 import { getCompoundsForCreature } from "@/data";
 import { usePlayerProgress } from "@/lib/PlayerProgressContext";
-import type { BattleResult } from "@/lib/game-types";
+import type { BattleOption, BattleResult } from "@/lib/game-types";
 
 interface ContainmentBattleProps {
   creature: Creature;
@@ -14,11 +14,38 @@ interface ContainmentBattleProps {
   onClose: () => void;
 }
 
+/** Look up the in-depth explanation for a battle move */
+function getMoveDescription(opt: BattleOption): string | null {
+  if (opt.type === "countermeasure") {
+    const c = allCreatures.find((cr) => cr.id === opt.id);
+    return c?.countermeasure.description ?? null;
+  }
+  if (opt.type === "hope-creature") {
+    const h = hopeCreatures.find((hc) => hc.id === opt.id);
+    if (!h) return null;
+    return h.description + (h.technicalVision ? "\n\n" + h.technicalVision : "");
+  }
+  return null;
+}
+
+/** Get the source creature/hope name for context */
+function getMoveSource(opt: BattleOption): string | null {
+  if (opt.type === "countermeasure") {
+    const c = allCreatures.find((cr) => cr.id === opt.id);
+    return c ? `Countermeasure for ${c.name}` : null;
+  }
+  if (opt.type === "hope-creature") {
+    return "Hope Creature";
+  }
+  return null;
+}
+
 export default function ContainmentBattle({ creature, viewMode, onClose }: ContainmentBattleProps) {
   const { state, containCreature, recordBattleLoss } = usePlayerProgress();
   const [result, setResult] = useState<BattleResult | null>(null);
   const [freeText, setFreeText] = useState("");
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [expandedInfo, setExpandedInfo] = useState<number | null>(null);
 
   const region = regions.find((r) => r.id === creature.region);
   const regionAccent = region?.color.accent ?? "#7c3aed";
@@ -28,10 +55,9 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
     [creature, viewMode],
   );
 
-  // Shared battle resolution logic
   const resolveBattleResult = useCallback((won: boolean, correctLabel: string) => {
     const xpEarned = won ? calculateContainmentXP(creature) : 0;
-    const currentXP = state.xp; // Snapshot current XP before update
+    const currentXP = state.xp;
     const oldTitle = getTitle(currentXP);
     const newTitle = getTitle(currentXP + xpEarned);
 
@@ -41,7 +67,6 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
       recordBattleLoss();
     }
 
-    // Build compound escalation for wrong answers
     let compoundEscalation: BattleResult["compoundEscalation"] = undefined;
     if (!won) {
       const compounds = getCompoundsForCreature(creature.id);
@@ -66,6 +91,7 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
     (index: number) => {
       if (result || !battle) return;
       setSelectedIndex(index);
+      setExpandedInfo(null);
       const won = index === battle.correctIndex;
       resolveBattleResult(won, battle.options[battle.correctIndex].label);
     },
@@ -78,12 +104,17 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
     resolveBattleResult(won, creature.countermeasure.name);
   }, [freeText, result, creature, resolveBattleResult]);
 
+  const toggleInfo = useCallback((index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedInfo((prev) => (prev === index ? null : index));
+  }, []);
+
   const { likelihood, impact, detectability } = creature.threatGradient;
   const composite = likelihood + impact + detectability;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop with region-colored tint */}
+      {/* Backdrop */}
       <div
         className="absolute inset-0 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]"
         style={{
@@ -117,7 +148,7 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
                 className="text-sm font-bold tracking-[0.2em] text-ink"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                CONTAINMENT CHALLENGE
+                BATTLE
               </h2>
             </div>
             <button
@@ -137,13 +168,10 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
               border: `1px solid ${regionAccent}15`,
             }}
           >
-            {/* Ambient glow */}
             <div
               className="absolute top-0 left-0 w-32 h-32 rounded-full blur-2xl opacity-20"
               style={{ backgroundColor: regionAccent }}
             />
-
-            {/* Creature sprite */}
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center relative shrink-0"
               style={{
@@ -180,24 +208,29 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
             <>
               {/* Question */}
               <p
-                className="text-sm font-bold text-ink mb-4"
+                className="text-sm font-bold text-ink mb-1"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                How do you contain this threat?
+                Choose your move!
+              </p>
+              <p className="text-xs text-ink-light mb-4">
+                Select the right technique to defeat this threat.
+                <span className="text-ink/30 ml-1">
+                  Click <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-ink/5 text-[9px] font-bold align-text-bottom">i</span> for details.
+                </span>
               </p>
 
               {viewMode === "cartographer" ? (
-                /* Free text input */
                 <div className="space-y-3">
                   <p className="text-xs text-ink-light">
-                    Name the countermeasure or hope creature that contains this threat.
+                    Name the technique or hope creature that defeats this threat.
                   </p>
                   <input
                     type="text"
                     value={freeText}
                     onChange={(e) => setFreeText(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleFreeTextSubmit()}
-                    placeholder="Enter the countermeasure name..."
+                    placeholder="Enter the move name..."
                     className="w-full px-4 py-3 rounded-xl border bg-parchment text-ink text-sm focus:outline-none transition-all"
                     style={{
                       borderColor: `${regionAccent}30`,
@@ -215,46 +248,86 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
                       boxShadow: `0 4px 14px ${regionAccent}30`,
                     }}
                   >
-                    SUBMIT ANSWER
+                    SUBMIT
                   </button>
                 </div>
               ) : (
-                /* Multiple choice */
+                /* Multiple choice with info buttons */
                 <div className="space-y-2">
-                  {battle?.options.map((opt, i) => (
-                    <button
-                      key={opt.label}
-                      onClick={() => handleSelect(i)}
-                      className="w-full text-left px-4 py-3 rounded-xl border transition-all duration-200 text-sm text-ink group hover:scale-[1.01] active:scale-[0.99]"
-                      style={{
-                        borderColor: "rgba(44,24,16,0.1)",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = `${regionAccent}40`;
-                        e.currentTarget.style.backgroundColor = `${regionAccent}05`;
-                        e.currentTarget.style.boxShadow = `0 2px 8px ${regionAccent}10`;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = "rgba(44,24,16,0.1)";
-                        e.currentTarget.style.backgroundColor = "transparent";
-                        e.currentTarget.style.boxShadow = "none";
-                      }}
-                    >
-                      <span
-                        className="inline-flex items-center justify-center w-6 h-6 rounded-lg mr-2 text-xs font-bold"
-                        style={{
-                          backgroundColor: `${regionAccent}12`,
-                          color: regionAccent,
-                        }}
-                      >
-                        {String.fromCharCode(65 + i)}
-                      </span>
-                      {opt.label}
-                      {opt.type === "hope-creature" && (
-                        <span className="ml-2 text-xs text-amber-600 font-semibold">(Hope)</span>
-                      )}
-                    </button>
-                  ))}
+                  {battle?.options.map((opt, i) => {
+                    const isExpanded = expandedInfo === i;
+                    const desc = getMoveDescription(opt);
+                    const source = getMoveSource(opt);
+
+                    return (
+                      <div key={opt.label} className="rounded-xl border transition-all duration-200" style={{
+                        borderColor: isExpanded ? `${regionAccent}30` : "rgba(44,24,16,0.1)",
+                        backgroundColor: isExpanded ? `${regionAccent}03` : "transparent",
+                      }}>
+                        {/* Option row */}
+                        <div className="flex items-center">
+                          <button
+                            onClick={() => handleSelect(i)}
+                            className="flex-1 text-left px-4 py-3 text-sm text-ink group hover:bg-ink/[0.02] transition-all rounded-l-xl"
+                          >
+                            <span
+                              className="inline-flex items-center justify-center w-6 h-6 rounded-lg mr-2 text-xs font-bold"
+                              style={{
+                                backgroundColor: `${regionAccent}12`,
+                                color: regionAccent,
+                              }}
+                            >
+                              {String.fromCharCode(65 + i)}
+                            </span>
+                            {opt.label}
+                            {opt.type === "hope-creature" && (
+                              <span className="ml-2 text-xs text-amber-600 font-semibold">(Hope)</span>
+                            )}
+                          </button>
+                          {/* Info toggle button */}
+                          {desc && (
+                            <button
+                              onClick={(e) => toggleInfo(i, e)}
+                              className="shrink-0 w-9 h-full flex items-center justify-center rounded-r-xl transition-all hover:bg-ink/5"
+                              aria-label={`${isExpanded ? "Hide" : "Show"} details for ${opt.label}`}
+                              title="Show move details"
+                            >
+                              <span
+                                className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold transition-all"
+                                style={{
+                                  backgroundColor: isExpanded ? regionAccent : `${regionAccent}12`,
+                                  color: isExpanded ? "#fff" : regionAccent,
+                                }}
+                              >
+                                i
+                              </span>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Expanded info panel */}
+                        {isExpanded && desc && (
+                          <div className="px-4 pb-3 animate-[fade-in-up_0.2s_ease-out]">
+                            <div className="rounded-lg p-3 text-xs leading-relaxed text-ink/80" style={{
+                              backgroundColor: `${regionAccent}06`,
+                              border: `1px solid ${regionAccent}10`,
+                            }}>
+                              {source && (
+                                <p className="text-[10px] font-bold tracking-wider mb-1.5 uppercase" style={{ color: regionAccent }}>
+                                  {source}
+                                </p>
+                              )}
+                              {desc.split("\n\n").map((para, pi) => (
+                                <p key={pi} className={pi > 0 ? "mt-2" : ""}>
+                                  {para}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </>
@@ -269,7 +342,6 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
                     border: "1px solid rgba(22,163,74,0.2)",
                   }}
                 >
-                  {/* Success glow */}
                   <div className="absolute inset-0 animate-[containment-ring_1s_ease-out_forwards]" style={{
                     background: "radial-gradient(circle, rgba(22,163,74,0.15) 0%, transparent 60%)",
                   }} />
@@ -285,8 +357,9 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
                       className="text-xl font-bold text-green-800 mb-1"
                       style={{ fontFamily: "var(--font-display)" }}
                     >
-                      CONTAINED
+                      VICTORY
                     </h3>
+                    <p className="text-xs text-green-700/70 mb-1">Threat defeated!</p>
                     <p className="text-sm text-green-700 font-bold">
                       +{result.xpEarned} XP
                     </p>
@@ -312,10 +385,10 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
                     className="text-xl font-bold text-red-800 mb-2"
                     style={{ fontFamily: "var(--font-display)" }}
                   >
-                    THREAT ESCALATED
+                    DEFEAT
                   </h3>
                   <p className="text-sm text-red-700">
-                    The countermeasure was:{" "}
+                    The correct move was:{" "}
                     <strong className="font-bold">{result.correctAnswer.label}</strong>
                   </p>
                 </div>
@@ -342,6 +415,15 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
                 </div>
               )}
 
+              {/* Correct answer explanation (shown after battle ends) */}
+              {result && (
+                <CorrectMoveExplanation
+                  result={result}
+                  creature={creature}
+                  regionAccent={regionAccent}
+                />
+              )}
+
               <button
                 onClick={onClose}
                 className="w-full py-3 rounded-xl font-bold text-sm tracking-wide transition-all hover:scale-[1.01] active:scale-[0.99]"
@@ -355,7 +437,7 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
                     : `0 4px 14px ${regionAccent}30`,
                 }}
               >
-                {result.won ? "CONTINUE EXPLORING" : "TRY AGAIN LATER"}
+                {result.won ? "CONTINUE EXPLORING" : "RETREAT"}
               </button>
             </div>
           )}
@@ -365,7 +447,7 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
             borderTop: `1px solid ${regionAccent}15`,
           }}>
             <span className="text-xs text-ink-light">
-              Composite threat:{" "}
+              Threat level:{" "}
               <strong
                 className="font-mono"
                 style={{ color: composite >= 12 ? "#ef4444" : composite >= 8 ? regionAccent : "#6b7280" }}
@@ -376,6 +458,58 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Shows the correct answer's full explanation after the battle ends */
+function CorrectMoveExplanation({ result, creature, regionAccent }: {
+  result: BattleResult; creature: Creature; regionAccent: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const desc = creature.countermeasure.description;
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{
+      border: `1px solid ${regionAccent}15`,
+      backgroundColor: `${regionAccent}04`,
+    }}>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-ink/[0.02] transition-all"
+      >
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold"
+            style={{ backgroundColor: `${regionAccent}15`, color: regionAccent }}
+          >
+            i
+          </span>
+          <span className="text-xs font-bold text-ink" style={{ fontFamily: "var(--font-display)" }}>
+            {result.won ? "How this move works" : "Learn the correct move"}
+          </span>
+        </div>
+        <svg
+          width="12" height="12" viewBox="0 0 12 12" fill="none"
+          className="transition-transform duration-200"
+          style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
+        >
+          <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {expanded && (
+        <div className="px-4 pb-4 animate-[fade-in-up_0.2s_ease-out]">
+          <div className="rounded-lg p-3 text-xs leading-relaxed text-ink/80" style={{
+            backgroundColor: `${regionAccent}06`,
+            border: `1px solid ${regionAccent}10`,
+          }}>
+            <p className="text-[10px] font-bold tracking-wider mb-1.5 uppercase" style={{ color: regionAccent }}>
+              {creature.countermeasure.name}
+            </p>
+            <p>{desc}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

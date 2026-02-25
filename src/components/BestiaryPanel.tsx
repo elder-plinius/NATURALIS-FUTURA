@@ -162,7 +162,7 @@ export default function BestiaryPanel({
           </span>
         </div>
 
-        {/* Challenge / Contained */}
+        {/* Battle / Defeated */}
         {isContained ? (
           <div className="flex items-center gap-2 mb-4 px-3 py-2.5 rounded-lg bg-green-50 border border-green-200">
             <div className="w-6 h-6 rounded-full bg-green-600 flex items-center justify-center">
@@ -170,7 +170,7 @@ export default function BestiaryPanel({
                 <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <span className="text-xs font-bold text-green-800 tracking-wide">CONTAINED</span>
+            <span className="text-xs font-bold text-green-800 tracking-wide">DEFEATED</span>
           </div>
         ) : onChallenge ? (
           <button
@@ -183,7 +183,7 @@ export default function BestiaryPanel({
             }}
           >
             <span className="text-base">&#9876;</span>
-            CHALLENGE &mdash; ATTEMPT CONTAINMENT
+            BATTLE
           </button>
         ) : null}
 
