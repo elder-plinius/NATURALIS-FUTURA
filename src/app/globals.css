@@ -458,3 +458,23 @@
     opacity: 0;
   }
 }
+
+/* ── Dungeon Crawler Torch Effect ── */
+
+@keyframes torch-flicker {
+  0%, 100% {
+    opacity: 1;
+  }
+  25% {
+    opacity: 0.97;
+  }
+  50% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.95;
+  }
+  88% {
+    opacity: 1;
+  }
+}
