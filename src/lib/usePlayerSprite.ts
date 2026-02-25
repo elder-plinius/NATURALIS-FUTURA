@@ -18,6 +18,7 @@ const MOVE_INTERVAL = 16; // ~60fps
 export function usePlayerSprite(
   enabled: boolean,
   onMoveStart?: () => void,
+  canMoveTo?: (x: number, y: number) => boolean,
 ) {
   const [sprite, setSprite] = useState<PlayerSpriteState>({
     x: 0.5,
@@ -33,6 +34,8 @@ export function usePlayerSprite(
   const wasMoving = useRef(false);
   const onMoveStartRef = useRef(onMoveStart);
   onMoveStartRef.current = onMoveStart;
+  const canMoveToRef = useRef(canMoveTo);
+  canMoveToRef.current = canMoveTo;
 
   const updatePosition = useCallback(() => {
     const keys = keysDown.current;
@@ -53,13 +56,46 @@ export function usePlayerSprite(
         onMoveStartRef.current?.();
       }
       stepCounter.current++;
-      setSprite((prev) => ({
-        x: Math.max(0.01, Math.min(0.99, prev.x + dx)),
-        y: Math.max(0.01, Math.min(0.99, prev.y + dy)),
-        direction: dir ?? prev.direction,
-        isMoving: true,
-        step: Math.floor(stepCounter.current / 8) % 4, // 4-frame walk cycle
-      }));
+      setSprite((prev) => {
+        const clamp = (v: number) => Math.max(0.01, Math.min(0.99, v));
+        const newX = clamp(prev.x + dx);
+        const newY = clamp(prev.y + dy);
+        const check = canMoveToRef.current;
+
+        let finalX = newX;
+        let finalY = newY;
+
+        if (check) {
+          if (!check(newX, newY)) {
+            // Try wall-sliding: move only on one axis
+            const canSlideX = check(newX, prev.y);
+            const canSlideY = check(prev.x, newY);
+            if (canSlideX) {
+              finalX = newX;
+              finalY = prev.y;
+            } else if (canSlideY) {
+              finalX = prev.x;
+              finalY = newY;
+            } else {
+              // Fully blocked
+              return {
+                ...prev,
+                direction: dir ?? prev.direction,
+                isMoving: true,
+                step: Math.floor(stepCounter.current / 8) % 4,
+              };
+            }
+          }
+        }
+
+        return {
+          x: finalX,
+          y: finalY,
+          direction: dir ?? prev.direction,
+          isMoving: true,
+          step: Math.floor(stepCounter.current / 8) % 4,
+        };
+      });
     } else {
       if (wasMoving.current) {
         wasMoving.current = false;
@@ -69,7 +105,6 @@ export function usePlayerSprite(
   }, []);
 
   // ALWAYS listen for keys, even when "disabled" -- but only move when enabled
-  // This way keys don't get swallowed by other handlers
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;

@@ -6,12 +6,174 @@ import type { Creature, Region } from "@/data";
 import type { Direction } from "@/lib/usePlayerSprite";
 
 // ── World configuration ──
-// The world is WORLD_SCALE times larger than the viewport.
-// This creates a scrollable area the player explores.
 const WORLD_SCALE = 2.8;
 const ENCOUNTER_DISTANCE = 0.035;
 const HINT_DISTANCE = ENCOUNTER_DISTANCE * 3;
 
+// ── Obstacle types ──
+export type ObstacleType = "wall" | "hedge" | "ruin" | "water" | "rock";
+
+export interface Obstacle {
+  x: number; y: number; w: number; h: number;
+  type: ObstacleType;
+}
+
+// ── OBSTACLE DATA ──
+// Walls between region borders with gaps for passages.
+// Hedges, ruins, rocks scattered within regions for maze-like exploration.
+export const WORLD_OBSTACLES: Obstacle[] = [
+  // ═══════════════════════════════════════════════
+  // HORIZONTAL WALLS — region borders
+  // ═══════════════════════════════════════════════
+
+  // Between Abyss/Siren-Sea and Throne Room (y ≈ 0.285)
+  { x: 0.03, y: 0.282, w: 0.16, h: 0.012, type: "wall" },
+  // gap at x=0.19-0.24
+  { x: 0.24, y: 0.282, w: 0.24, h: 0.012, type: "wall" },
+  // gap at x=0.48-0.52 (central corridor)
+  { x: 0.52, y: 0.282, w: 0.21, h: 0.012, type: "wall" },
+  // gap at x=0.73-0.78
+  { x: 0.78, y: 0.282, w: 0.19, h: 0.012, type: "wall" },
+
+  // Between Throne Room and Hive/Mirror (y ≈ 0.478)
+  { x: 0.20, y: 0.475, w: 0.14, h: 0.012, type: "wall" },
+  // gap at x=0.34-0.39
+  { x: 0.39, y: 0.475, w: 0.10, h: 0.012, type: "wall" },
+  // gap at x=0.49-0.54 (central corridor)
+  { x: 0.54, y: 0.475, w: 0.26, h: 0.012, type: "wall" },
+
+  // Between Hive/Mirror and Spawning/Colosseum (y ≈ 0.72)
+  { x: 0.03, y: 0.718, w: 0.18, h: 0.012, type: "wall" },
+  // gap at x=0.21-0.26
+  { x: 0.26, y: 0.718, w: 0.22, h: 0.012, type: "wall" },
+  // gap at x=0.48-0.53
+  { x: 0.53, y: 0.718, w: 0.20, h: 0.012, type: "wall" },
+  // gap at x=0.73-0.78
+  { x: 0.78, y: 0.718, w: 0.19, h: 0.012, type: "wall" },
+
+  // Between Spawning/Colosseum and Catacombs (y ≈ 0.935)
+  { x: 0.03, y: 0.932, w: 0.22, h: 0.010, type: "wall" },
+  // gap at x=0.25-0.30
+  { x: 0.30, y: 0.932, w: 0.28, h: 0.010, type: "wall" },
+  // gap at x=0.58-0.63
+  { x: 0.63, y: 0.932, w: 0.34, h: 0.010, type: "wall" },
+
+  // ═══════════════════════════════════════════════
+  // VERTICAL WALLS — between left/right regions
+  // ═══════════════════════════════════════════════
+
+  // Between Abyss and Siren-Sea (x ≈ 0.485)
+  { x: 0.483, y: 0.02, w: 0.012, h: 0.10, type: "wall" },
+  // gap at y=0.12-0.17
+  { x: 0.483, y: 0.17, w: 0.012, h: 0.112, type: "wall" },
+
+  // Between Hive and Mirror-Dark (x ≈ 0.485)
+  { x: 0.483, y: 0.49, w: 0.012, h: 0.08, type: "wall" },
+  // gap at y=0.57-0.62
+  { x: 0.483, y: 0.62, w: 0.012, h: 0.098, type: "wall" },
+
+  // Between Spawning and Colosseum (x ≈ 0.485)
+  { x: 0.483, y: 0.73, w: 0.012, h: 0.08, type: "wall" },
+  // gap at y=0.81-0.86
+  { x: 0.483, y: 0.86, w: 0.012, h: 0.072, type: "wall" },
+
+  // ═══════════════════════════════════════════════
+  // HEDGES — scattered within regions
+  // ═══════════════════════════════════════════════
+
+  // Abyss hedges
+  { x: 0.07, y: 0.12, w: 0.07, h: 0.010, type: "hedge" },
+  { x: 0.22, y: 0.07, w: 0.010, h: 0.06, type: "hedge" },
+  { x: 0.34, y: 0.19, w: 0.06, h: 0.010, type: "hedge" },
+
+  // Siren-Sea hedges
+  { x: 0.60, y: 0.13, w: 0.09, h: 0.010, type: "hedge" },
+  { x: 0.78, y: 0.06, w: 0.010, h: 0.07, type: "hedge" },
+  { x: 0.85, y: 0.19, w: 0.07, h: 0.010, type: "hedge" },
+
+  // Hive hedges
+  { x: 0.08, y: 0.55, w: 0.08, h: 0.010, type: "hedge" },
+  { x: 0.28, y: 0.59, w: 0.010, h: 0.06, type: "hedge" },
+  { x: 0.15, y: 0.68, w: 0.07, h: 0.010, type: "hedge" },
+
+  // Mirror-Dark hedges
+  { x: 0.62, y: 0.63, w: 0.08, h: 0.010, type: "hedge" },
+  { x: 0.82, y: 0.54, w: 0.010, h: 0.07, type: "hedge" },
+  { x: 0.70, y: 0.70, w: 0.06, h: 0.010, type: "hedge" },
+
+  // Spawning Grounds hedges
+  { x: 0.08, y: 0.84, w: 0.06, h: 0.010, type: "hedge" },
+  { x: 0.32, y: 0.80, w: 0.010, h: 0.05, type: "hedge" },
+
+  // Colosseum hedges
+  { x: 0.68, y: 0.85, w: 0.08, h: 0.010, type: "hedge" },
+  { x: 0.88, y: 0.80, w: 0.010, h: 0.06, type: "hedge" },
+
+  // ═══════════════════════════════════════════════
+  // RUINS / BUILDINGS — landmarks near regions
+  // ═══════════════════════════════════════════════
+
+  // Throne Room tower (center)
+  { x: 0.48, y: 0.34, w: 0.025, h: 0.035, type: "ruin" },
+  // Throne Room pillar left
+  { x: 0.26, y: 0.40, w: 0.020, h: 0.025, type: "ruin" },
+  // Throne Room pillar right
+  { x: 0.72, y: 0.38, w: 0.020, h: 0.025, type: "ruin" },
+
+  // Hive nest structure
+  { x: 0.18, y: 0.62, w: 0.025, h: 0.025, type: "ruin" },
+
+  // Mirror-Dark obelisk
+  { x: 0.75, y: 0.60, w: 0.015, h: 0.035, type: "ruin" },
+
+  // Colosseum arena wall fragment
+  { x: 0.78, y: 0.90, w: 0.06, h: 0.015, type: "ruin" },
+
+  // ═══════════════════════════════════════════════
+  // WATER — impassable ponds/streams
+  // ═══════════════════════════════════════════════
+
+  // Siren-Sea pond
+  { x: 0.68, y: 0.17, w: 0.04, h: 0.03, type: "water" },
+
+  // Spawning Grounds pool
+  { x: 0.22, y: 0.85, w: 0.05, h: 0.03, type: "water" },
+
+  // ═══════════════════════════════════════════════
+  // ROCKS — boulders blocking paths
+  // ═══════════════════════════════════════════════
+
+  // Abyss boulders
+  { x: 0.12, y: 0.17, w: 0.020, h: 0.020, type: "rock" },
+  { x: 0.38, y: 0.10, w: 0.018, h: 0.018, type: "rock" },
+
+  // Colosseum rocks
+  { x: 0.62, y: 0.88, w: 0.020, h: 0.018, type: "rock" },
+  { x: 0.92, y: 0.85, w: 0.018, h: 0.020, type: "rock" },
+
+  // Catacombs entrance rocks
+  { x: 0.42, y: 0.95, w: 0.015, h: 0.015, type: "rock" },
+  { x: 0.56, y: 0.96, w: 0.015, h: 0.015, type: "rock" },
+];
+
+const PLAYER_RADIUS = 0.006;
+
+/** Check if a world-space point is blocked by obstacles */
+export function isBlockedAt(px: number, py: number): boolean {
+  for (const obs of WORLD_OBSTACLES) {
+    if (
+      px + PLAYER_RADIUS > obs.x &&
+      px - PLAYER_RADIUS < obs.x + obs.w &&
+      py + PLAYER_RADIUS > obs.y &&
+      py - PLAYER_RADIUS < obs.y + obs.h
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// ── Visual configuration ──
 interface MapCanvasProps {
   onSelectCreature: (creature: Creature) => void;
   onSelectRegion: (regionId: string) => void;
@@ -40,6 +202,35 @@ const REGION_COLORS: Record<string, { accent: string; glow: string }> = {
   catacombs: { accent: "#00ff88", glow: "0, 255, 136" },
 };
 
+const OBSTACLE_STYLES: Record<ObstacleType, { bg: string; border: string; borderStyle?: string; radius?: string }> = {
+  wall: {
+    bg: "linear-gradient(135deg, #8B7355, #6B5B45, #8B7355)",
+    border: "2px solid #5A4A3A",
+    radius: "2px",
+  },
+  hedge: {
+    bg: "linear-gradient(135deg, #2D5A2D, #3A7A3A, #2D5A2D)",
+    border: "1px solid #1A3F1A",
+    radius: "4px",
+  },
+  ruin: {
+    bg: "linear-gradient(145deg, #7A6A5A, #9A8A7A, #7A6A5A)",
+    border: "2px solid #5A4A3A",
+    borderStyle: "2px dashed #5A4A3A",
+    radius: "3px",
+  },
+  water: {
+    bg: "linear-gradient(135deg, #3A7AB8, #4A9AD8, #3A7AB8)",
+    border: "1px solid #2A6A9A",
+    radius: "8px",
+  },
+  rock: {
+    bg: "radial-gradient(ellipse, #6A6A6A, #4A4A4A)",
+    border: "1px solid #3A3A3A",
+    radius: "50%",
+  },
+};
+
 // ── Player Sprite ──
 function PlayerSprite({ direction, isMoving, step }: { direction: Direction; isMoving: boolean; step: number }) {
   const bobY = isMoving ? [0, -2, 0, -2][step] : 0;
@@ -54,14 +245,15 @@ function PlayerSprite({ direction, isMoving, step }: { direction: Direction; isM
     <div
       className="flex flex-col items-center"
       style={{
-        transform: `translateY(${bobY}px) scaleX(${facingLeft ? -1 : 1})`,
+        transform: `translateY(${bobY}px) scaleX(${facingLeft ? -1 : 1}) scale(1.8)`,
         transition: "transform 50ms linear",
+        transformOrigin: "center bottom",
       }}
     >
       {/* Shadow */}
-      <div className="absolute bottom-[-2px] w-8 h-2 rounded-full bg-black/15 blur-[2px]" />
+      <div className="absolute bottom-[-4px] w-10 h-3 rounded-full bg-black/20 blur-[3px]" />
 
-      <svg width="28" height="36" viewBox="0 0 28 36" className="drop-shadow-md">
+      <svg width="28" height="36" viewBox="0 0 28 36" className="drop-shadow-lg">
         {/* Hat */}
         <ellipse cx="14" cy="6" rx="10" ry="5" fill="#8B4513" />
         <ellipse cx="14" cy="5" rx="7" ry="4" fill="#A0522D" />
@@ -110,6 +302,48 @@ function PlayerSprite({ direction, isMoving, step }: { direction: Direction; isM
         <ellipse cx={10 + leftLeg} cy="34" rx="3" ry="2" fill="#3B1E0E" />
         <ellipse cx={18 + rightLeg} cy="34" rx="3" ry="2" fill="#3B1E0E" />
       </svg>
+    </div>
+  );
+}
+
+// ── Obstacle Renderer ──
+function ObstacleNode({ obstacle }: { obstacle: Obstacle }) {
+  const style = OBSTACLE_STYLES[obstacle.type];
+  return (
+    <div
+      className="absolute pointer-events-none"
+      style={{
+        left: `${obstacle.x * 100}%`,
+        top: `${obstacle.y * 100}%`,
+        width: `${obstacle.w * 100}%`,
+        height: `${obstacle.h * 100}%`,
+        background: style.bg,
+        border: style.borderStyle ?? style.border,
+        borderRadius: style.radius,
+        boxShadow: obstacle.type === "water"
+          ? "inset 0 1px 4px rgba(255,255,255,0.3), 0 1px 3px rgba(0,0,0,0.15)"
+          : "0 1px 3px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1)",
+        zIndex: obstacle.type === "wall" ? 8 : 6,
+      }}
+    >
+      {/* Texture details */}
+      {obstacle.type === "wall" && (
+        <div className="absolute inset-0 opacity-20 pointer-events-none" style={{
+          backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(0,0,0,0.15) 8px, rgba(0,0,0,0.15) 9px),
+                            repeating-linear-gradient(0deg, transparent, transparent 5px, rgba(0,0,0,0.1) 5px, rgba(0,0,0,0.1) 6px)`,
+        }} />
+      )}
+      {obstacle.type === "hedge" && (
+        <div className="absolute inset-0 opacity-30 pointer-events-none" style={{
+          backgroundImage: `radial-gradient(circle 3px, rgba(80,180,80,0.4) 0%, transparent 100%)`,
+          backgroundSize: "8px 8px",
+        }} />
+      )}
+      {obstacle.type === "water" && (
+        <div className="absolute inset-0 opacity-30 pointer-events-none animate-[fog-drift_6s_ease-in-out_infinite_alternate]" style={{
+          backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.2) 4px, rgba(255,255,255,0.2) 6px)`,
+        }} />
+      )}
     </div>
   );
 }
@@ -264,19 +498,10 @@ export default function MapCanvas({
   const lastEncountered = useRef<string | null>(null);
 
   // ── Camera system ──
-  // Camera centers on player. We compute a CSS transform to pan the world.
-  // The world is WORLD_SCALE * viewport size. Camera offset = player position in that space.
   const cameraStyle = useMemo(() => {
-    // Player position in world-space pixels (as % of the world)
-    // We want the player at the center of the viewport.
-    // World is WORLD_SCALE * 100% wide. Player is at playerX * WORLD_SCALE * 100%.
-    // To center player: translate = 50% - playerX * WORLD_SCALE * 100%
     const tx = 50 - playerX * WORLD_SCALE * 100;
     const ty = 50 - playerY * WORLD_SCALE * 100;
 
-    // Clamp so we don't scroll past world edges
-    // Min translate: 50 - WORLD_SCALE * 100 (player at right edge)
-    // Max translate: 50 - 0 = 50 (player at left edge)
     const minTx = -(WORLD_SCALE * 100 - 100);
     const maxTx = 0;
     const minTy = -(WORLD_SCALE * 100 - 100);
@@ -293,17 +518,23 @@ export default function MapCanvas({
     };
   }, [playerX, playerY, playerMoving]);
 
-  // ── Proximity encounters ──
+  // ── Proximity encounters (with reset when player walks away) ──
   useEffect(() => {
     if (!mapRevealed || !onEncounterCreature) return;
     for (const creature of allCreatures) {
       if (discoveredSet.has(creature.id)) continue;
       const dx = playerX - creature.mapPosition.x;
       const dy = playerY - creature.mapPosition.y;
-      if (Math.sqrt(dx * dx + dy * dy) < ENCOUNTER_DISTANCE && creature.id !== lastEncountered.current) {
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < ENCOUNTER_DISTANCE && creature.id !== lastEncountered.current) {
         lastEncountered.current = creature.id;
         onEncounterCreature(creature);
         return;
+      }
+      // Reset encounter lock when player moves far enough away
+      if (dist > ENCOUNTER_DISTANCE * 2.5 && lastEncountered.current === creature.id) {
+        lastEncountered.current = null;
       }
     }
   }, [playerX, playerY, mapRevealed, discoveredSet, onEncounterCreature]);
@@ -365,6 +596,11 @@ export default function MapCanvas({
             creatureCount={getCreaturesByRegion(region.id).length} />
         ))}
 
+        {/* ── Obstacles ── */}
+        {WORLD_OBSTACLES.map((obs, i) => (
+          <ObstacleNode key={`obs-${i}`} obstacle={obs} />
+        ))}
+
         {/* Compound lines */}
         <CompoundLines selectedCreature={selectedCreature} creatures={allCreatures} />
 
@@ -382,7 +618,7 @@ export default function MapCanvas({
         {/* Hope creatures */}
         {showHope && hopeCreatures.map((hope) => (
           <div key={hope.id}
-            className="absolute flex flex-col items-center z-15 animate-[fade-in-up_0.6s_ease-out_forwards]"
+            className="absolute flex flex-col items-center z-10 animate-[fade-in-up_0.6s_ease-out_forwards]"
             style={{
               left: `${hope.mapPosition.x * 100}%`, top: `${hope.mapPosition.y * 100}%`,
               transform: "translate(-50%, -50%)",
@@ -401,14 +637,14 @@ export default function MapCanvas({
           </div>
         ))}
 
-        {/* ── Player sprite (positioned in world space) ── */}
+        {/* ── Player sprite (positioned in world space, scaled up) ── */}
         {mapRevealed && (
           <div
             className="absolute z-30 pointer-events-none"
             style={{
               left: `${playerX * 100}%`,
               top: `${playerY * 100}%`,
-              transform: "translate(-50%, -50%)",
+              transform: "translate(-50%, -100%)",
               transition: playerMoving ? "left 50ms linear, top 50ms linear" : "left 200ms ease-out, top 200ms ease-out",
             }}
           >
@@ -417,7 +653,7 @@ export default function MapCanvas({
         )}
       </div>
 
-      {/* ── HUD overlays (not inside the world, fixed to viewport) ── */}
+      {/* ── HUD overlays (fixed to viewport) ── */}
 
       {/* Fog overlay */}
       {!mapRevealed && (
@@ -454,9 +690,9 @@ export default function MapCanvas({
 
       {/* Minimap */}
       {mapRevealed && (
-        <div className="absolute top-3 right-3 z-20 w-24 h-20 rounded-lg border border-ink/15 bg-parchment/80 backdrop-blur-sm overflow-hidden pointer-events-none shadow-sm">
+        <div className="absolute top-3 right-3 z-20 w-28 h-24 rounded-lg border border-ink/15 bg-parchment/80 backdrop-blur-sm overflow-hidden pointer-events-none shadow-sm">
           {/* Player dot on minimap */}
-          <div className="absolute w-2 h-2 rounded-full bg-amber-600 shadow-sm"
+          <div className="absolute w-2.5 h-2.5 rounded-full bg-amber-600 shadow-sm border border-amber-800"
             style={{
               left: `${playerX * 100}%`, top: `${playerY * 100}%`,
               transform: "translate(-50%, -50%)",
@@ -478,6 +714,15 @@ export default function MapCanvas({
                 left: `${c.mapPosition.x * 100}%`, top: `${c.mapPosition.y * 100}%`,
                 backgroundColor: REGION_COLORS[c.region]?.accent ?? "#666",
                 transform: "translate(-50%, -50%)",
+              }} />
+          ))}
+          {/* Obstacle outlines on minimap */}
+          {WORLD_OBSTACLES.filter((o) => o.type === "wall").map((obs, i) => (
+            <div key={`mini-obs-${i}`} className="absolute"
+              style={{
+                left: `${obs.x * 100}%`, top: `${obs.y * 100}%`,
+                width: `${obs.w * 100}%`, height: `${obs.h * 100}%`,
+                backgroundColor: "rgba(90,74,58,0.4)",
               }} />
           ))}
         </div>

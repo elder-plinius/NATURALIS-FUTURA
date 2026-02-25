@@ -14,6 +14,7 @@ import ContainmentBattle from "@/components/ContainmentBattle";
 import DiscoveryAnimation from "@/components/DiscoveryAnimation";
 import { PlayerProgressProvider, usePlayerProgress } from "@/lib/PlayerProgressContext";
 import { usePlayerSprite } from "@/lib/usePlayerSprite";
+import { isBlockedAt } from "@/components/MapCanvas";
 import type { Creature, ViewMode } from "@/data";
 
 type ActiveView = "map" | "risk-matrix" | "bestiary" | "compounds" | "dashboard" | "progress";
@@ -42,7 +43,9 @@ function AppContent() {
     setSelectedRegion(null);
   }, []);
 
-  const player = usePlayerSprite(movementEnabled, handleMoveStart);
+  const canMoveTo = useCallback((x: number, y: number) => !isBlockedAt(x, y), []);
+
+  const player = usePlayerSprite(movementEnabled, handleMoveStart, canMoveTo);
 
   // Click-based creature selection (also triggers discovery)
   const selectCreature = useCallback((creature: Creature | null) => {
