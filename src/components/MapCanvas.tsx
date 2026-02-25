@@ -10,6 +10,8 @@ interface MapCanvasProps {
   selectedRegion: string | null;
   showHope: boolean;
   mapRevealed: boolean;
+  discoveredSet?: Set<string>;
+  containedSet?: Set<string>;
 }
 
 function CreatureNode({
@@ -17,18 +19,24 @@ function CreatureNode({
   onSelect,
   isSelected,
   isConnected,
+  isDiscovered,
+  isContained,
 }: {
   creature: Creature;
   onSelect: (c: Creature) => void;
   isSelected: boolean;
   isConnected: boolean;
+  isDiscovered: boolean;
+  isContained: boolean;
 }) {
   const statusClass =
-    creature.currentStatus.status === "emerging"
-      ? "status-breathing"
-      : creature.currentStatus.status === "confirmed"
-        ? "status-alert"
-        : "";
+    isDiscovered
+      ? creature.currentStatus.status === "emerging"
+        ? "status-breathing"
+        : creature.currentStatus.status === "confirmed"
+          ? "status-alert"
+          : ""
+      : "";
 
   const sizeMultiplier =
     (creature.threatGradient.likelihood +
@@ -39,24 +47,27 @@ function CreatureNode({
   return (
     <button
       onClick={() => onSelect(creature)}
-      className={`creature-icon absolute flex flex-col items-center gap-1 ${statusClass} ${isSelected ? "z-20 scale-125" : "z-10"} ${isConnected ? "ring-2 ring-amber-400 rounded-full" : ""}`}
+      className={`creature-icon absolute flex flex-col items-center gap-1 ${statusClass} ${isSelected ? "z-20 scale-125" : "z-10"} ${isConnected ? "ring-2 ring-amber-400 rounded-full" : ""} ${!isDiscovered ? "opacity-40 grayscale" : ""}`}
       style={{
         left: `${creature.mapPosition.x * 100}%`,
         top: `${creature.mapPosition.y * 100}%`,
         transform: `translate(-50%, -50%) scale(${0.8 + sizeMultiplier * 0.4})`,
       }}
-      title={creature.name}
-      aria-label={`${creature.name} — ${creature.currentStatus.status}`}
+      title={isDiscovered ? creature.name : "Unknown creature"}
+      aria-label={isDiscovered ? `${creature.name} — ${creature.currentStatus.status}` : "Unknown creature — click to discover"}
     >
       <span
-        className="text-2xl md:text-3xl drop-shadow-lg"
+        className="text-2xl md:text-3xl drop-shadow-lg relative"
         role="img"
         aria-hidden="true"
       >
-        {creature.icon}
+        {isDiscovered ? creature.icon : "❓"}
+        {isContained && (
+          <span className="absolute -bottom-1 -right-1 text-xs">🛡️</span>
+        )}
       </span>
-      <span className="text-xs md:text-xs font-bold text-ink whitespace-nowrap drop-shadow-[0_1px_2px_rgba(245,240,225,0.8)] tracking-wide">
-        {creature.name.replace("THE ", "")}
+      <span className={`text-xs md:text-xs font-bold whitespace-nowrap drop-shadow-[0_1px_2px_rgba(245,240,225,0.8)] tracking-wide ${isDiscovered ? "text-ink" : "text-ink-light"}`}>
+        {isDiscovered ? creature.name.replace("THE ", "") : "???"}
       </span>
     </button>
   );
@@ -143,6 +154,8 @@ export default function MapCanvas({
   selectedRegion,
   showHope,
   mapRevealed,
+  discoveredSet = new Set(),
+  containedSet = new Set(),
 }: MapCanvasProps) {
   const connectedIds = selectedCreature?.compoundRisk ?? [];
 
@@ -193,6 +206,8 @@ export default function MapCanvas({
           onSelect={onSelectCreature}
           isSelected={selectedCreature?.id === creature.id}
           isConnected={connectedIds.includes(creature.id)}
+          isDiscovered={discoveredSet.has(creature.id)}
+          isContained={containedSet.has(creature.id)}
         />
       ))}
 

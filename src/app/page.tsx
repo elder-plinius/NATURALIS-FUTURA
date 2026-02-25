@@ -8,11 +8,16 @@ import CompoundExplorer from "@/components/CompoundExplorer";
 import BestiaryList from "@/components/BestiaryList";
 import ThreatDashboard from "@/components/ThreatDashboard";
 import SearchOverlay from "@/components/SearchOverlay";
+import PlayerHUD from "@/components/PlayerHUD";
+import ProgressPanel from "@/components/ProgressPanel";
+import ContainmentBattle from "@/components/ContainmentBattle";
+import DiscoveryAnimation from "@/components/DiscoveryAnimation";
+import { PlayerProgressProvider, usePlayerProgress } from "@/lib/PlayerProgressContext";
 import type { Creature, ViewMode } from "@/data";
 
-type ActiveView = "map" | "risk-matrix" | "bestiary" | "compounds" | "dashboard";
+type ActiveView = "map" | "risk-matrix" | "bestiary" | "compounds" | "dashboard" | "progress";
 
-export default function Home() {
+function AppContent() {
   const [selectedCreature, setSelectedCreature] = useState<Creature | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("novice");
@@ -21,39 +26,59 @@ export default function Home() {
   const [mapRevealed, setMapRevealed] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
+  const [battleCreature, setBattleCreature] = useState<Creature | null>(null);
+  const [discoveryCreature, setDiscoveryCreature] = useState<Creature | null>(null);
+
+  const { discoveredSet, containedSet, discoverCreature } = usePlayerProgress();
 
   const selectCreature = useCallback((creature: Creature | null) => {
+    if (creature) {
+      // Trigger discovery if new
+      const isNew = discoverCreature(creature.id);
+      if (isNew) {
+        setDiscoveryCreature(creature);
+      }
+    }
     setSelectedCreature(creature);
     if (creature && activeView !== "map") {
       setActiveView("map");
     }
-  }, [activeView]);
+  }, [activeView, discoverCreature]);
 
   const handleRevealMap = useCallback(() => {
     setMapRevealed(true);
+  }, []);
+
+  const handleChallenge = useCallback((creature: Creature) => {
+    setBattleCreature(creature);
   }, []);
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        if (showSearch) {
+        if (battleCreature) {
+          setBattleCreature(null);
+        } else if (showSearch) {
           setShowSearch(false);
         } else if (selectedCreature) {
           setSelectedCreature(null);
         }
       }
-      if (e.key === "/" && !showSearch && !(e.target instanceof HTMLInputElement)) {
+      if (e.key === "/" && !showSearch && !battleCreature && !(e.target instanceof HTMLInputElement)) {
         e.preventDefault();
         setShowSearch(true);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showSearch, selectedCreature]);
+  }, [showSearch, selectedCreature, battleCreature]);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-parchment">
+      {/* Player HUD */}
+      {mapRevealed && <PlayerHUD />}
+
       {/* Main content area */}
       <div className="flex-1 flex overflow-hidden relative">
         {/* Map / Active view */}
@@ -77,6 +102,8 @@ export default function Home() {
                 selectedRegion={selectedRegion}
                 showHope={showHope}
                 mapRevealed={mapRevealed}
+                discoveredSet={discoveredSet}
+                containedSet={containedSet}
               />
             </div>
           )}
@@ -113,6 +140,12 @@ export default function Home() {
               />
             </div>
           )}
+
+          {activeView === "progress" && (
+            <div className="w-full h-full overflow-y-auto">
+              <ProgressPanel />
+            </div>
+          )}
         </div>
 
         {/* Bestiary side panel */}
@@ -124,6 +157,8 @@ export default function Home() {
               onClose={() => setSelectedCreature(null)}
               onSelectCreature={(c) => selectCreature(c)}
               onSetViewMode={setViewMode}
+              isContained={containedSet.has(selectedCreature.id)}
+              onChallenge={handleChallenge}
             />
           </div>
         )}
@@ -145,6 +180,7 @@ export default function Home() {
                 { id: "bestiary" as ActiveView, label: "Bestiary", icon: "📖" },
                 { id: "compounds" as ActiveView, label: "Compounds", icon: "⚡" },
                 { id: "dashboard" as ActiveView, label: "Observatory", icon: "📡" },
+                { id: "progress" as ActiveView, label: "Progress", icon: "🏆" },
               ] as const).map((tab) => (
                 <button
                   key={tab.id}
@@ -247,6 +283,31 @@ export default function Home() {
           onClose={() => setShowSearch(false)}
         />
       )}
+
+      {/* Containment battle overlay */}
+      {battleCreature && (
+        <ContainmentBattle
+          creature={battleCreature}
+          viewMode={viewMode}
+          onClose={() => setBattleCreature(null)}
+        />
+      )}
+
+      {/* Discovery animation overlay */}
+      {discoveryCreature && (
+        <DiscoveryAnimation
+          creature={discoveryCreature}
+          onComplete={() => setDiscoveryCreature(null)}
+        />
+      )}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <PlayerProgressProvider>
+      <AppContent />
+    </PlayerProgressProvider>
   );
 }

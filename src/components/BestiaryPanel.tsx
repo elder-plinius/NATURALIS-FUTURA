@@ -13,6 +13,8 @@ interface BestiaryPanelProps {
   onClose: () => void;
   onSelectCreature: (creature: Creature) => void;
   onSetViewMode: (mode: ViewMode) => void;
+  isContained?: boolean;
+  onChallenge?: (creature: Creature) => void;
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -59,6 +61,8 @@ export default function BestiaryPanel({
   onClose,
   onSelectCreature,
   onSetViewMode,
+  isContained = false,
+  onChallenge,
 }: BestiaryPanelProps) {
   const connected = getConnectedCreatures(creature.id);
   const compounds = getCompoundsForCreature(creature.id);
@@ -94,6 +98,22 @@ export default function BestiaryPanel({
             &times;
           </button>
         </div>
+
+        {/* Challenge / Contained button */}
+        {isContained ? (
+          <div className="flex items-center gap-2 mt-3 px-3 py-2 rounded-lg bg-green-50 border border-green-200">
+            <span>🛡️</span>
+            <span className="text-xs font-bold text-green-800">CONTAINED</span>
+          </div>
+        ) : onChallenge ? (
+          <button
+            onClick={() => onChallenge(creature)}
+            className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-ink text-parchment font-bold text-sm tracking-wide hover:bg-ink/90 transition-colors"
+          >
+            <span>⚔️</span>
+            CHALLENGE — ATTEMPT CONTAINMENT
+          </button>
+        ) : null}
 
         {/* Separator */}
         <div className="border-t border-ink/10 my-4" />
