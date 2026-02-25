@@ -32,9 +32,17 @@ function AppContent() {
 
   const { discoveredSet, containedSet, discoverCreature } = usePlayerProgress();
 
-  // Player movement enabled only on map view with no overlays open
-  const movementEnabled = mapRevealed && activeView === "map" && !showSearch && !battleCreature && !discoveryCreature && !selectedCreature;
-  const player = usePlayerSprite(movementEnabled);
+  // Player movement enabled on map view when no full-screen overlays are open
+  // Note: selectedCreature does NOT block movement — onMoveStart auto-closes it
+  const movementEnabled = mapRevealed && activeView === "map" && !showSearch && !battleCreature && !discoveryCreature;
+
+  const handleMoveStart = useCallback(() => {
+    // Auto-close panels when the player starts walking
+    setSelectedCreature(null);
+    setSelectedRegion(null);
+  }, []);
+
+  const player = usePlayerSprite(movementEnabled, handleMoveStart);
 
   // Click-based creature selection (also triggers discovery)
   const selectCreature = useCallback((creature: Creature | null) => {

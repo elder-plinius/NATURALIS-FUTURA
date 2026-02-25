@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import type { Creature, ViewMode } from "@/data";
 import { regions } from "@/data";
-import { generateBattleOptions, resolveBattle, fuzzyMatchCountermeasure, calculateContainmentXP, getTitle } from "@/lib/game-logic";
+import { generateBattleOptions, fuzzyMatchCountermeasure, calculateContainmentXP, getTitle } from "@/lib/game-logic";
 import { getCompoundsForCreature } from "@/data";
 import { usePlayerProgress } from "@/lib/PlayerProgressContext";
 import type { BattleResult } from "@/lib/game-types";
