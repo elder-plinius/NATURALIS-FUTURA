@@ -28,17 +28,6 @@ function getMoveDescription(opt: BattleOption): string | null {
   return null;
 }
 
-/** Get the source creature/hope name for context */
-function getMoveSource(opt: BattleOption): string | null {
-  if (opt.type === "countermeasure") {
-    const c = allCreatures.find((cr) => cr.id === opt.id);
-    return c ? `Countermeasure for ${c.name}` : null;
-  }
-  if (opt.type === "hope-creature") {
-    return "Hope Creature";
-  }
-  return null;
-}
 
 export default function ContainmentBattle({ creature, viewMode, onClose }: ContainmentBattleProps) {
   const { state, containCreature, recordBattleLoss } = usePlayerProgress();
@@ -257,7 +246,6 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
                   {battle?.options.map((opt, i) => {
                     const isExpanded = expandedInfo === i;
                     const desc = getMoveDescription(opt);
-                    const source = getMoveSource(opt);
 
                     return (
                       <div key={opt.label} className="rounded-xl border transition-all duration-200" style={{
@@ -312,11 +300,6 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
                               backgroundColor: `${regionAccent}06`,
                               border: `1px solid ${regionAccent}10`,
                             }}>
-                              {source && (
-                                <p className="text-[10px] font-bold tracking-wider mb-1.5 uppercase" style={{ color: regionAccent }}>
-                                  {source}
-                                </p>
-                              )}
                               {desc.split("\n\n").map((para, pi) => (
                                 <p key={pi} className={pi > 0 ? "mt-2" : ""}>
                                   {para}
