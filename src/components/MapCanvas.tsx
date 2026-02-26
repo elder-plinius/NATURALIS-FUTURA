@@ -6,10 +6,10 @@ import type { Creature, Region } from "@/data";
 import type { Direction } from "@/lib/usePlayerSprite";
 
 // ── World configuration ──
-const WORLD_SCALE = 3;
-const ENCOUNTER_DISTANCE = 0.035;
+const WORLD_SCALE = 9;
+const ENCOUNTER_DISTANCE = 0.012;
 const HINT_DISTANCE = ENCOUNTER_DISTANCE * 3;
-const TORCH_RADIUS = 0.14; // creatures within this range are dimly visible even if undiscovered
+const TORCH_RADIUS = 0.05; // creatures within this range are dimly visible even if undiscovered
 
 // ── Obstacle types ──
 export type ObstacleType = "wall" | "hedge" | "ruin" | "water" | "rock";
@@ -21,84 +21,293 @@ export interface Obstacle {
 
 // ── OBSTACLE DATA ──
 export const WORLD_OBSTACLES: Obstacle[] = [
-  // ═══ HORIZONTAL WALLS — region borders ═══
+  // ═══════════════════════════════════════════════════════
+  // BORDER WALLS — region boundaries with passage gaps
+  // ═══════════════════════════════════════════════════════
 
-  // Between Abyss/Siren-Sea and Throne Room (y ≈ 0.285)
-  { x: 0.03, y: 0.282, w: 0.16, h: 0.012, type: "wall" },
-  { x: 0.24, y: 0.282, w: 0.24, h: 0.012, type: "wall" },
-  { x: 0.52, y: 0.282, w: 0.21, h: 0.012, type: "wall" },
-  { x: 0.78, y: 0.282, w: 0.19, h: 0.012, type: "wall" },
+  // ─── Row 1↔2: Abyss/Siren ↔ Throne Room (y ≈ 0.278) ───
+  { x: 0.02, y: 0.278, w: 0.12, h: 0.005, type: "wall" },
+  { x: 0.18, y: 0.278, w: 0.12, h: 0.005, type: "wall" },
+  { x: 0.34, y: 0.278, w: 0.13, h: 0.005, type: "wall" },
+  { x: 0.52, y: 0.278, w: 0.15, h: 0.005, type: "wall" },
+  { x: 0.71, y: 0.278, w: 0.10, h: 0.005, type: "wall" },
+  { x: 0.85, y: 0.278, w: 0.13, h: 0.005, type: "wall" },
 
-  // Between Throne Room and Hive/Mirror (y ≈ 0.478)
-  { x: 0.20, y: 0.475, w: 0.14, h: 0.012, type: "wall" },
-  { x: 0.39, y: 0.475, w: 0.10, h: 0.012, type: "wall" },
-  { x: 0.54, y: 0.475, w: 0.26, h: 0.012, type: "wall" },
+  // ─── Row 2↔3: Throne Room ↔ Hive/Mirror (y ≈ 0.471) ───
+  { x: 0.02, y: 0.471, w: 0.16, h: 0.005, type: "wall" },
+  { x: 0.22, y: 0.471, w: 0.12, h: 0.005, type: "wall" },
+  { x: 0.39, y: 0.471, w: 0.08, h: 0.005, type: "wall" },
+  { x: 0.52, y: 0.471, w: 0.19, h: 0.005, type: "wall" },
+  { x: 0.75, y: 0.471, w: 0.23, h: 0.005, type: "wall" },
 
-  // Between Hive/Mirror and Spawning/Colosseum (y ≈ 0.72)
-  { x: 0.03, y: 0.718, w: 0.18, h: 0.012, type: "wall" },
-  { x: 0.26, y: 0.718, w: 0.22, h: 0.012, type: "wall" },
-  { x: 0.53, y: 0.718, w: 0.20, h: 0.012, type: "wall" },
-  { x: 0.78, y: 0.718, w: 0.19, h: 0.012, type: "wall" },
+  // ─── Row 3↔4: Hive/Mirror ↔ Spawning/Colosseum (y ≈ 0.714) ───
+  { x: 0.02, y: 0.714, w: 0.14, h: 0.005, type: "wall" },
+  { x: 0.20, y: 0.714, w: 0.13, h: 0.005, type: "wall" },
+  { x: 0.38, y: 0.714, w: 0.09, h: 0.005, type: "wall" },
+  { x: 0.52, y: 0.714, w: 0.14, h: 0.005, type: "wall" },
+  { x: 0.70, y: 0.714, w: 0.28, h: 0.005, type: "wall" },
 
-  // Between Spawning/Colosseum and Catacombs (y ≈ 0.935)
-  { x: 0.03, y: 0.932, w: 0.22, h: 0.010, type: "wall" },
-  { x: 0.30, y: 0.932, w: 0.28, h: 0.010, type: "wall" },
-  { x: 0.63, y: 0.932, w: 0.34, h: 0.010, type: "wall" },
+  // ─── Row 4↔5: Spawning/Colosseum ↔ Catacombs (y ≈ 0.928) ───
+  { x: 0.02, y: 0.928, w: 0.20, h: 0.005, type: "wall" },
+  { x: 0.26, y: 0.928, w: 0.21, h: 0.005, type: "wall" },
+  { x: 0.52, y: 0.928, w: 0.21, h: 0.005, type: "wall" },
+  { x: 0.77, y: 0.928, w: 0.21, h: 0.005, type: "wall" },
 
-  // ═══ VERTICAL WALLS ═══
+  // ─── Vertical: Abyss | Siren-Sea ───
+  { x: 0.479, y: 0.02, w: 0.005, h: 0.08, type: "wall" },
+  { x: 0.479, y: 0.14, w: 0.005, h: 0.138, type: "wall" },
 
-  // Between Abyss and Siren-Sea
-  { x: 0.483, y: 0.02, w: 0.012, h: 0.10, type: "wall" },
-  { x: 0.483, y: 0.17, w: 0.012, h: 0.112, type: "wall" },
+  // ─── Vertical: Hive | Mirror-Dark ───
+  { x: 0.479, y: 0.49, w: 0.005, h: 0.06, type: "wall" },
+  { x: 0.479, y: 0.60, w: 0.005, h: 0.114, type: "wall" },
 
-  // Between Hive and Mirror-Dark
-  { x: 0.483, y: 0.49, w: 0.012, h: 0.08, type: "wall" },
-  { x: 0.483, y: 0.62, w: 0.012, h: 0.098, type: "wall" },
+  // ─── Vertical: Spawning | Colosseum ───
+  { x: 0.479, y: 0.73, w: 0.005, h: 0.06, type: "wall" },
+  { x: 0.479, y: 0.83, w: 0.005, h: 0.098, type: "wall" },
 
-  // Between Spawning and Colosseum
-  { x: 0.483, y: 0.73, w: 0.012, h: 0.08, type: "wall" },
-  { x: 0.483, y: 0.86, w: 0.012, h: 0.072, type: "wall" },
+  // ═══════════════════════════════════════════════════════
+  // THE ABYSS — Dark labyrinth (x: 0.03-0.47, y: 0.02-0.27)
+  // ═══════════════════════════════════════════════════════
 
-  // ═══ HEDGES ═══
-  { x: 0.07, y: 0.12, w: 0.07, h: 0.010, type: "hedge" },
-  { x: 0.22, y: 0.07, w: 0.010, h: 0.06, type: "hedge" },
-  { x: 0.34, y: 0.19, w: 0.06, h: 0.010, type: "hedge" },
-  { x: 0.60, y: 0.13, w: 0.09, h: 0.010, type: "hedge" },
-  { x: 0.78, y: 0.06, w: 0.010, h: 0.07, type: "hedge" },
-  { x: 0.85, y: 0.19, w: 0.07, h: 0.010, type: "hedge" },
-  { x: 0.08, y: 0.55, w: 0.08, h: 0.010, type: "hedge" },
-  { x: 0.28, y: 0.59, w: 0.010, h: 0.06, type: "hedge" },
-  { x: 0.15, y: 0.68, w: 0.07, h: 0.010, type: "hedge" },
-  { x: 0.62, y: 0.63, w: 0.08, h: 0.010, type: "hedge" },
-  { x: 0.82, y: 0.54, w: 0.010, h: 0.07, type: "hedge" },
-  { x: 0.70, y: 0.70, w: 0.06, h: 0.010, type: "hedge" },
-  { x: 0.08, y: 0.84, w: 0.06, h: 0.010, type: "hedge" },
-  { x: 0.32, y: 0.80, w: 0.010, h: 0.05, type: "hedge" },
-  { x: 0.68, y: 0.85, w: 0.08, h: 0.010, type: "hedge" },
-  { x: 0.88, y: 0.80, w: 0.010, h: 0.06, type: "hedge" },
+  // Outer corridor L-shape
+  { x: 0.06, y: 0.04, w: 0.005, h: 0.10, type: "wall" },
+  { x: 0.06, y: 0.04, w: 0.12, h: 0.005, type: "wall" },
+  { x: 0.18, y: 0.04, w: 0.005, h: 0.06, type: "wall" },
+  // Inner maze walls
+  { x: 0.10, y: 0.10, w: 0.10, h: 0.005, type: "wall" },
+  { x: 0.20, y: 0.10, w: 0.005, h: 0.06, type: "wall" },
+  // Deeper corridors
+  { x: 0.25, y: 0.05, w: 0.005, h: 0.08, type: "wall" },
+  { x: 0.25, y: 0.13, w: 0.10, h: 0.005, type: "wall" },
+  { x: 0.35, y: 0.06, w: 0.005, h: 0.07, type: "wall" },
+  { x: 0.35, y: 0.06, w: 0.08, h: 0.005, type: "wall" },
+  // Inner chambers
+  { x: 0.10, y: 0.17, w: 0.12, h: 0.005, type: "wall" },
+  { x: 0.30, y: 0.19, w: 0.005, h: 0.06, type: "wall" },
+  { x: 0.30, y: 0.19, w: 0.08, h: 0.005, type: "wall" },
+  { x: 0.40, y: 0.14, w: 0.005, h: 0.08, type: "wall" },
+  // Abyss ruins
+  { x: 0.14, y: 0.07, w: 0.012, h: 0.015, type: "ruin" },
+  { x: 0.28, y: 0.22, w: 0.015, h: 0.012, type: "ruin" },
+  { x: 0.42, y: 0.10, w: 0.012, h: 0.018, type: "ruin" },
+  // Abyss rocks
+  { x: 0.08, y: 0.24, w: 0.008, h: 0.008, type: "rock" },
+  { x: 0.38, y: 0.24, w: 0.010, h: 0.008, type: "rock" },
+  // Abyss hedge
+  { x: 0.03, y: 0.18, w: 0.04, h: 0.004, type: "hedge" },
 
-  // ═══ RUINS ═══
-  { x: 0.48, y: 0.34, w: 0.025, h: 0.035, type: "ruin" },
-  { x: 0.26, y: 0.40, w: 0.020, h: 0.025, type: "ruin" },
-  { x: 0.72, y: 0.38, w: 0.020, h: 0.025, type: "ruin" },
-  { x: 0.18, y: 0.62, w: 0.025, h: 0.025, type: "ruin" },
-  { x: 0.75, y: 0.60, w: 0.015, h: 0.035, type: "ruin" },
-  { x: 0.78, y: 0.90, w: 0.06, h: 0.015, type: "ruin" },
+  // ═══════════════════════════════════════════════════════
+  // SIREN-SEA — Coastal labyrinth (x: 0.50-0.96, y: 0.02-0.27)
+  // ═══════════════════════════════════════════════════════
 
-  // ═══ WATER ═══
-  { x: 0.68, y: 0.17, w: 0.04, h: 0.03, type: "water" },
-  { x: 0.22, y: 0.85, w: 0.05, h: 0.03, type: "water" },
+  // Coastal walls
+  { x: 0.55, y: 0.05, w: 0.005, h: 0.08, type: "wall" },
+  { x: 0.55, y: 0.05, w: 0.10, h: 0.005, type: "wall" },
+  { x: 0.65, y: 0.05, w: 0.005, h: 0.05, type: "wall" },
+  { x: 0.72, y: 0.04, w: 0.005, h: 0.10, type: "wall" },
+  { x: 0.72, y: 0.04, w: 0.12, h: 0.005, type: "wall" },
+  { x: 0.84, y: 0.04, w: 0.005, h: 0.07, type: "wall" },
+  // Inner passages
+  { x: 0.58, y: 0.13, w: 0.12, h: 0.005, type: "wall" },
+  { x: 0.78, y: 0.12, w: 0.005, h: 0.08, type: "wall" },
+  { x: 0.78, y: 0.20, w: 0.10, h: 0.005, type: "wall" },
+  { x: 0.88, y: 0.12, w: 0.005, h: 0.08, type: "wall" },
+  { x: 0.55, y: 0.20, w: 0.12, h: 0.005, type: "wall" },
+  { x: 0.67, y: 0.15, w: 0.005, h: 0.10, type: "wall" },
+  // Siren water pools
+  { x: 0.62, y: 0.08, w: 0.025, h: 0.020, type: "water" },
+  { x: 0.82, y: 0.16, w: 0.030, h: 0.020, type: "water" },
+  { x: 0.92, y: 0.08, w: 0.025, h: 0.030, type: "water" },
+  // Siren hedges
+  { x: 0.52, y: 0.14, w: 0.004, h: 0.06, type: "hedge" },
+  { x: 0.90, y: 0.22, w: 0.05, h: 0.004, type: "hedge" },
+  // Siren rocks
+  { x: 0.60, y: 0.23, w: 0.008, h: 0.010, type: "rock" },
+  { x: 0.75, y: 0.07, w: 0.010, h: 0.008, type: "rock" },
+  { x: 0.94, y: 0.24, w: 0.008, h: 0.008, type: "rock" },
 
-  // ═══ ROCKS ═══
-  { x: 0.12, y: 0.17, w: 0.020, h: 0.020, type: "rock" },
-  { x: 0.38, y: 0.10, w: 0.018, h: 0.018, type: "rock" },
-  { x: 0.62, y: 0.88, w: 0.020, h: 0.018, type: "rock" },
-  { x: 0.92, y: 0.85, w: 0.018, h: 0.020, type: "rock" },
-  { x: 0.42, y: 0.95, w: 0.015, h: 0.015, type: "rock" },
-  { x: 0.56, y: 0.96, w: 0.015, h: 0.015, type: "rock" },
+  // ═══════════════════════════════════════════════════════
+  // THRONE ROOM — Grand corridors (x: 0.03-0.96, y: 0.29-0.46)
+  // ═══════════════════════════════════════════════════════
+
+  // Grand hall pillared corridor
+  { x: 0.30, y: 0.30, w: 0.005, h: 0.14, type: "wall" },
+  { x: 0.66, y: 0.30, w: 0.005, h: 0.14, type: "wall" },
+  // West wing
+  { x: 0.10, y: 0.35, w: 0.18, h: 0.005, type: "wall" },
+  { x: 0.10, y: 0.35, w: 0.005, h: 0.08, type: "wall" },
+  { x: 0.10, y: 0.43, w: 0.10, h: 0.005, type: "wall" },
+  { x: 0.06, y: 0.30, w: 0.005, h: 0.06, type: "wall" },
+  { x: 0.20, y: 0.40, w: 0.005, h: 0.06, type: "wall" },
+  // East wing
+  { x: 0.70, y: 0.35, w: 0.16, h: 0.005, type: "wall" },
+  { x: 0.86, y: 0.35, w: 0.005, h: 0.08, type: "wall" },
+  { x: 0.78, y: 0.43, w: 0.08, h: 0.005, type: "wall" },
+  { x: 0.92, y: 0.30, w: 0.005, h: 0.06, type: "wall" },
+  { x: 0.76, y: 0.40, w: 0.005, h: 0.06, type: "wall" },
+  // Throne approach corridor
+  { x: 0.42, y: 0.33, w: 0.005, h: 0.05, type: "wall" },
+  { x: 0.54, y: 0.33, w: 0.005, h: 0.05, type: "wall" },
+  { x: 0.42, y: 0.42, w: 0.005, h: 0.04, type: "wall" },
+  { x: 0.54, y: 0.42, w: 0.005, h: 0.04, type: "wall" },
+  // Throne pillar ruins
+  { x: 0.36, y: 0.32, w: 0.012, h: 0.012, type: "ruin" },
+  { x: 0.60, y: 0.32, w: 0.012, h: 0.012, type: "ruin" },
+  { x: 0.36, y: 0.43, w: 0.012, h: 0.012, type: "ruin" },
+  { x: 0.60, y: 0.43, w: 0.012, h: 0.012, type: "ruin" },
+  { x: 0.48, y: 0.38, w: 0.015, h: 0.015, type: "ruin" },
+  // Throne hedges
+  { x: 0.14, y: 0.31, w: 0.06, h: 0.004, type: "hedge" },
+  { x: 0.78, y: 0.31, w: 0.06, h: 0.004, type: "hedge" },
+
+  // ═══════════════════════════════════════════════════════
+  // THE HIVE — Dense organic maze (x: 0.03-0.47, y: 0.49-0.71)
+  // ═══════════════════════════════════════════════════════
+
+  // Top honeycomb structure
+  { x: 0.08, y: 0.51, w: 0.10, h: 0.005, type: "wall" },
+  { x: 0.08, y: 0.51, w: 0.005, h: 0.06, type: "wall" },
+  { x: 0.18, y: 0.51, w: 0.005, h: 0.04, type: "wall" },
+  { x: 0.13, y: 0.57, w: 0.08, h: 0.005, type: "wall" },
+  // Central hive
+  { x: 0.24, y: 0.52, w: 0.005, h: 0.10, type: "wall" },
+  { x: 0.24, y: 0.52, w: 0.08, h: 0.005, type: "wall" },
+  { x: 0.32, y: 0.52, w: 0.005, h: 0.06, type: "wall" },
+  { x: 0.28, y: 0.62, w: 0.08, h: 0.005, type: "wall" },
+  { x: 0.36, y: 0.58, w: 0.005, h: 0.08, type: "wall" },
+  // Lower passages
+  { x: 0.06, y: 0.63, w: 0.005, h: 0.06, type: "wall" },
+  { x: 0.06, y: 0.63, w: 0.08, h: 0.005, type: "wall" },
+  { x: 0.14, y: 0.63, w: 0.005, h: 0.04, type: "wall" },
+  { x: 0.10, y: 0.69, w: 0.12, h: 0.005, type: "wall" },
+  { x: 0.38, y: 0.66, w: 0.08, h: 0.005, type: "wall" },
+  { x: 0.42, y: 0.52, w: 0.005, h: 0.06, type: "wall" },
+  // Hive hedges (organic barriers)
+  { x: 0.16, y: 0.50, w: 0.004, h: 0.04, type: "hedge" },
+  { x: 0.40, y: 0.62, w: 0.004, h: 0.05, type: "hedge" },
+  { x: 0.20, y: 0.68, w: 0.05, h: 0.004, type: "hedge" },
+  // Hive rocks
+  { x: 0.04, y: 0.55, w: 0.008, h: 0.008, type: "rock" },
+  { x: 0.44, y: 0.69, w: 0.008, h: 0.010, type: "rock" },
+
+  // ═══════════════════════════════════════════════════════
+  // MIRROR-DARK — Symmetric halls (x: 0.50-0.96, y: 0.49-0.71)
+  // ═══════════════════════════════════════════════════════
+
+  // Symmetric left wing
+  { x: 0.56, y: 0.51, w: 0.005, h: 0.08, type: "wall" },
+  { x: 0.56, y: 0.51, w: 0.08, h: 0.005, type: "wall" },
+  { x: 0.64, y: 0.51, w: 0.005, h: 0.04, type: "wall" },
+  // Symmetric right wing (mirror)
+  { x: 0.90, y: 0.51, w: 0.005, h: 0.08, type: "wall" },
+  { x: 0.82, y: 0.51, w: 0.08, h: 0.005, type: "wall" },
+  { x: 0.82, y: 0.51, w: 0.005, h: 0.04, type: "wall" },
+  // Central mirror corridor
+  { x: 0.70, y: 0.54, w: 0.005, h: 0.10, type: "wall" },
+  { x: 0.76, y: 0.54, w: 0.005, h: 0.10, type: "wall" },
+  // Lower mirror halls
+  { x: 0.54, y: 0.64, w: 0.12, h: 0.005, type: "wall" },
+  { x: 0.80, y: 0.64, w: 0.12, h: 0.005, type: "wall" },
+  { x: 0.60, y: 0.64, w: 0.005, h: 0.05, type: "wall" },
+  { x: 0.86, y: 0.64, w: 0.005, h: 0.05, type: "wall" },
+  // Mirror pools (reflecting surfaces)
+  { x: 0.58, y: 0.56, w: 0.030, h: 0.020, type: "water" },
+  { x: 0.86, y: 0.56, w: 0.030, h: 0.020, type: "water" },
+  { x: 0.72, y: 0.66, w: 0.020, h: 0.025, type: "water" },
+  // Mirror hedges
+  { x: 0.52, y: 0.68, w: 0.05, h: 0.004, type: "hedge" },
+  { x: 0.92, y: 0.68, w: 0.004, h: 0.04, type: "hedge" },
+  // Mirror ruins
+  { x: 0.66, y: 0.52, w: 0.012, h: 0.012, type: "ruin" },
+  { x: 0.78, y: 0.52, w: 0.012, h: 0.012, type: "ruin" },
+
+  // ═══════════════════════════════════════════════════════
+  // SPAWNING GROUNDS — Natural caverns (x: 0.03-0.47, y: 0.73-0.92)
+  // ═══════════════════════════════════════════════════════
+
+  // Cave walls
+  { x: 0.08, y: 0.75, w: 0.005, h: 0.08, type: "wall" },
+  { x: 0.08, y: 0.75, w: 0.10, h: 0.005, type: "wall" },
+  { x: 0.22, y: 0.78, w: 0.005, h: 0.06, type: "wall" },
+  { x: 0.15, y: 0.84, w: 0.10, h: 0.005, type: "wall" },
+  { x: 0.32, y: 0.76, w: 0.005, h: 0.10, type: "wall" },
+  { x: 0.32, y: 0.76, w: 0.08, h: 0.005, type: "wall" },
+  { x: 0.40, y: 0.82, w: 0.005, h: 0.06, type: "wall" },
+  { x: 0.10, y: 0.89, w: 0.14, h: 0.005, type: "wall" },
+  // Spawning pools
+  { x: 0.12, y: 0.79, w: 0.040, h: 0.025, type: "water" },
+  { x: 0.35, y: 0.88, w: 0.045, h: 0.020, type: "water" },
+  { x: 0.25, y: 0.82, w: 0.025, h: 0.030, type: "water" },
+  // Spawning rocks
+  { x: 0.05, y: 0.86, w: 0.010, h: 0.012, type: "rock" },
+  { x: 0.18, y: 0.76, w: 0.008, h: 0.008, type: "rock" },
+  { x: 0.28, y: 0.90, w: 0.010, h: 0.008, type: "rock" },
+  { x: 0.44, y: 0.78, w: 0.008, h: 0.010, type: "rock" },
+  // Spawning hedges
+  { x: 0.06, y: 0.82, w: 0.004, h: 0.05, type: "hedge" },
+  { x: 0.38, y: 0.86, w: 0.004, h: 0.04, type: "hedge" },
+
+  // ═══════════════════════════════════════════════════════
+  // COLOSSEUM — Arena structure (x: 0.50-0.96, y: 0.73-0.92)
+  // ═══════════════════════════════════════════════════════
+
+  // Arena outer north wall (gap in center)
+  { x: 0.58, y: 0.76, w: 0.10, h: 0.005, type: "wall" },
+  { x: 0.76, y: 0.76, w: 0.10, h: 0.005, type: "wall" },
+  // Arena outer south wall (gap in center)
+  { x: 0.58, y: 0.87, w: 0.12, h: 0.005, type: "wall" },
+  { x: 0.78, y: 0.87, w: 0.08, h: 0.005, type: "wall" },
+  // Arena side walls (with entrance gaps)
+  { x: 0.58, y: 0.76, w: 0.005, h: 0.04, type: "wall" },
+  { x: 0.58, y: 0.84, w: 0.005, h: 0.03, type: "wall" },
+  { x: 0.86, y: 0.76, w: 0.005, h: 0.05, type: "wall" },
+  { x: 0.86, y: 0.85, w: 0.005, h: 0.02, type: "wall" },
+  // Inner tier walls
+  { x: 0.63, y: 0.79, w: 0.005, h: 0.05, type: "wall" },
+  { x: 0.81, y: 0.79, w: 0.005, h: 0.05, type: "wall" },
+  { x: 0.66, y: 0.84, w: 0.12, h: 0.005, type: "wall" },
+  // Outside arena
+  { x: 0.52, y: 0.90, w: 0.12, h: 0.005, type: "wall" },
+  { x: 0.82, y: 0.90, w: 0.12, h: 0.005, type: "wall" },
+  // Colosseum pillar ruins
+  { x: 0.65, y: 0.81, w: 0.012, h: 0.012, type: "ruin" },
+  { x: 0.80, y: 0.81, w: 0.012, h: 0.012, type: "ruin" },
+  { x: 0.73, y: 0.82, w: 0.015, h: 0.015, type: "ruin" },
+  // Colosseum rocks
+  { x: 0.54, y: 0.74, w: 0.008, h: 0.008, type: "rock" },
+  { x: 0.94, y: 0.90, w: 0.010, h: 0.008, type: "rock" },
+  // Colosseum hedge
+  { x: 0.52, y: 0.75, w: 0.004, h: 0.04, type: "hedge" },
+
+  // ═══════════════════════════════════════════════════════
+  // CATACOMBS — Dense underground maze (x: 0.03-0.96, y: 0.94-0.99)
+  // ═══════════════════════════════════════════════════════
+
+  // Dense maze corridors
+  { x: 0.08, y: 0.95, w: 0.005, h: 0.03, type: "wall" },
+  { x: 0.08, y: 0.95, w: 0.08, h: 0.005, type: "wall" },
+  { x: 0.20, y: 0.94, w: 0.005, h: 0.04, type: "wall" },
+  { x: 0.20, y: 0.96, w: 0.08, h: 0.005, type: "wall" },
+  { x: 0.32, y: 0.95, w: 0.005, h: 0.03, type: "wall" },
+  { x: 0.38, y: 0.94, w: 0.005, h: 0.04, type: "wall" },
+  { x: 0.38, y: 0.94, w: 0.06, h: 0.005, type: "wall" },
+  { x: 0.50, y: 0.95, w: 0.005, h: 0.03, type: "wall" },
+  { x: 0.56, y: 0.94, w: 0.08, h: 0.005, type: "wall" },
+  { x: 0.64, y: 0.94, w: 0.005, h: 0.04, type: "wall" },
+  { x: 0.70, y: 0.96, w: 0.08, h: 0.005, type: "wall" },
+  { x: 0.82, y: 0.95, w: 0.005, h: 0.03, type: "wall" },
+  { x: 0.88, y: 0.94, w: 0.005, h: 0.04, type: "wall" },
+  // Catacomb ruins
+  { x: 0.14, y: 0.97, w: 0.015, h: 0.012, type: "ruin" },
+  { x: 0.45, y: 0.96, w: 0.012, h: 0.015, type: "ruin" },
+  { x: 0.75, y: 0.97, w: 0.015, h: 0.012, type: "ruin" },
+  // Catacomb rocks
+  { x: 0.26, y: 0.97, w: 0.008, h: 0.008, type: "rock" },
+  { x: 0.60, y: 0.97, w: 0.008, h: 0.008, type: "rock" },
+  { x: 0.92, y: 0.96, w: 0.010, h: 0.010, type: "rock" },
 ];
 
-const PLAYER_RADIUS = 0.006;
+const PLAYER_RADIUS = 0.002;
 
 export function isBlockedAt(px: number, py: number): boolean {
   for (const obs of WORLD_OBSTACLES) {
@@ -475,7 +684,7 @@ export default function MapCanvas({
             linear-gradient(rgba(180,160,120,1) 1px, transparent 1px),
             linear-gradient(90deg, rgba(180,160,120,1) 1px, transparent 1px)
           `,
-          backgroundSize: "3.33% 3.33%",
+          backgroundSize: "1.11% 1.11%",
         }} />
 
         {/* Secondary smaller tiles for detail */}
@@ -484,7 +693,7 @@ export default function MapCanvas({
             linear-gradient(rgba(180,160,120,1) 1px, transparent 1px),
             linear-gradient(90deg, rgba(180,160,120,1) 1px, transparent 1px)
           `,
-          backgroundSize: "1.67% 1.67%",
+          backgroundSize: "0.56% 0.56%",
         }} />
 
         {/* Regions */}

@@ -12,7 +12,7 @@ export interface PlayerSpriteState {
   step: number; // walk cycle frame
 }
 
-const MOVE_SPEED = 0.003;
+const MOVE_SPEED = 0.001;
 const MOVE_INTERVAL = 16; // ~60fps
 
 export function usePlayerSprite(
