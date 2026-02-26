@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { usePlayerProgress } from "@/lib/PlayerProgressContext";
 import { allCreatures, regions } from "@/data";
 
@@ -33,6 +33,22 @@ export default function PlayerHUD() {
     }
     return null;
   }, [discoveredSet, containedSet, discoveryCount, totalCreatures]);
+
+  // Auto-save indicator
+  const [showSaved, setShowSaved] = useState(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const prevXP = useRef(state.xp);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    // Only flash on meaningful changes (XP, discoveries, containments)
+    if (prevXP.current !== state.xp && prevXP.current !== 0) {
+      setShowSaved(true);
+      clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => setShowSaved(false), 2000);
+    }
+    prevXP.current = state.xp;
+  }, [state.xp, isLoaded]);
 
   if (!isLoaded) return null;
 
@@ -88,6 +104,11 @@ export default function PlayerHUD() {
           {state.battleStats.currentStreak > 1 && (
             <span title="Current win streak" className="text-amber-600 font-bold">
               🔥 {state.battleStats.currentStreak}
+            </span>
+          )}
+          {showSaved && (
+            <span className="text-green-600/60 font-mono text-[10px] animate-[save-flash_2s_ease-out_forwards]">
+              &#10003; Saved
             </span>
           )}
         </div>

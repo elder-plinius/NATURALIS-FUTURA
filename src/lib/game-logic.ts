@@ -1,12 +1,13 @@
 import type { Creature, ViewMode } from "@/data/types";
 import { getCreaturesByRegion, hopeCreatures, allCreatures, getCompoundsForCreature } from "@/data";
-import type { BattleOption, BattleResult, TitleThreshold } from "./game-types";
+import type { BattleOption, BattleResult, TitleThreshold, MoveType } from "./game-types";
 import {
   TITLE_THRESHOLDS,
   XP_DISCOVERY,
   XP_CONTAINMENT_BASE,
   XP_CONTAINMENT_GRADIENT_MULTIPLIER,
   XP_REGION_MASTERY,
+  CREATURE_MOVE_TYPE,
 } from "./game-types";
 
 // ── Title & Level ──
@@ -55,6 +56,19 @@ export function calculateContainmentXP(creature: Creature): number {
   return XP_CONTAINMENT_BASE + (likelihood + impact + detectability) * XP_CONTAINMENT_GRADIENT_MULTIPLIER;
 }
 
+/** Streak-based XP multiplier — reward consecutive victories */
+export function getStreakMultiplier(currentStreak: number): number {
+  if (currentStreak >= 5) return 2.0;
+  if (currentStreak >= 3) return 1.5;
+  if (currentStreak >= 2) return 1.25;
+  return 1.0;
+}
+
+/** Get the move type for a creature's countermeasure */
+export function getMoveTypeForCreature(creatureId: string): MoveType {
+  return CREATURE_MOVE_TYPE[creatureId] ?? "forge";
+}
+
 // ── Battle Answer Generation ──
 
 function shuffle<T>(arr: T[]): T[] {
@@ -79,8 +93,8 @@ export function generateBattleOptions(
   const useHope = hopeMatch && Math.random() > 0.5;
 
   const correctAnswer: BattleOption = useHope
-    ? { id: hopeMatch!.id, label: hopeMatch!.name, type: "hope-creature" }
-    : { id: creature.id, label: creature.countermeasure.name, type: "countermeasure" };
+    ? { id: hopeMatch!.id, label: hopeMatch!.name, type: "hope-creature", moveType: "invoke" }
+    : { id: creature.id, label: creature.countermeasure.name, type: "countermeasure", moveType: getMoveTypeForCreature(creature.id) };
 
   const optionCount = viewMode === "novice" ? 3 : 4;
 
@@ -95,6 +109,7 @@ export function generateBattleOptions(
       id: c.id,
       label: c.countermeasure.name,
       type: "countermeasure",
+      moveType: getMoveTypeForCreature(c.id),
     });
   }
 
@@ -106,6 +121,7 @@ export function generateBattleOptions(
       id: h.id,
       label: h.name,
       type: "hope-creature",
+      moveType: "invoke" as MoveType,
     });
   }
 

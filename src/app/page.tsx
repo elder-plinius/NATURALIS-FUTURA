@@ -32,6 +32,7 @@ function AppContent() {
   const [battleCreature, setBattleCreature] = useState<Creature | null>(null);
   const [discoveryCreature, setDiscoveryCreature] = useState<Creature | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const [masteryToast, setMasteryToast] = useState<string | null>(null);
   const prevMasteredRef = useRef<Set<string> | null>(null);
 
@@ -39,7 +40,7 @@ function AppContent() {
 
   // Player movement enabled on map view when no full-screen overlays are open
   // Note: selectedCreature does NOT block movement — onMoveStart auto-closes it
-  const movementEnabled = mapRevealed && activeView === "map" && !showSearch && !battleCreature && !discoveryCreature && !showTutorial;
+  const movementEnabled = mapRevealed && activeView === "map" && !showSearch && !battleCreature && !discoveryCreature && !showTutorial && !showShortcuts;
 
   const handleMoveStart = useCallback(() => {
     // Auto-close panels when the player starts walking
@@ -103,7 +104,9 @@ function AppContent() {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       if (e.key === "Escape") {
-        if (showTutorial) {
+        if (showShortcuts) {
+          setShowShortcuts(false);
+        } else if (showTutorial) {
           setShowTutorial(false);
         } else if (battleCreature) {
           setBattleCreature(null);
@@ -113,6 +116,10 @@ function AppContent() {
           setSelectedCreature(null);
         }
       }
+      if (e.key === "?" && !showSearch && !battleCreature && !showShortcuts) {
+        e.preventDefault();
+        setShowShortcuts(true);
+      }
       if (e.key === "/" && !showSearch && !battleCreature && !(e.target instanceof HTMLInputElement)) {
         e.preventDefault();
         setShowSearch(true);
@@ -120,7 +127,7 @@ function AppContent() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showSearch, selectedCreature, battleCreature, showTutorial]);
+  }, [showSearch, selectedCreature, battleCreature, showTutorial, showShortcuts]);
 
   // Detect new region mastery for celebration toast
   useEffect(() => {
@@ -402,6 +409,55 @@ function AppContent() {
             >
               BEGIN EXPLORATION
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Keyboard shortcuts modal */}
+      {showShortcuts && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowShortcuts(false)} />
+          <div className="parchment-card rounded-2xl max-w-sm w-full relative animate-[modal-enter_0.2s_ease-out] p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2
+                className="text-sm font-bold text-ink tracking-[0.15em]"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                KEYBOARD SHORTCUTS
+              </h2>
+              <button
+                onClick={() => setShowShortcuts(false)}
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-ink-light hover:text-ink hover:bg-ink/5 transition-all"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="space-y-2 text-sm">
+              {[
+                { keys: "W A S D", desc: "Move explorer" },
+                { keys: "\u2190 \u2191 \u2192 \u2193", desc: "Move (arrows)" },
+                { keys: "1 - 4", desc: "Select battle move" },
+                { keys: "/", desc: "Open search" },
+                { keys: "?", desc: "This menu" },
+                { keys: "Esc", desc: "Close panels" },
+              ].map((shortcut) => (
+                <div key={shortcut.keys} className="flex items-center justify-between py-1.5 border-b border-ink/5 last:border-0">
+                  <span className="text-ink/70">{shortcut.desc}</span>
+                  <div className="flex gap-1">
+                    {shortcut.keys.split(" ").map((k) => (
+                      <kbd key={k} className="px-2 py-0.5 rounded bg-ink/5 text-ink text-xs font-mono font-bold border border-ink/10">
+                        {k}
+                      </kbd>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 pt-3 border-t border-ink/10">
+              <p className="text-[10px] text-ink/40 text-center italic">
+                Move types: WARD &#x1F6E1; &bull; GAZE &#x1F441; &bull; RITE &#x1F4DC; &bull; SEVER &#x2694;&#xFE0F; &bull; FORGE &#x1F52E; &bull; INVOKE &#x2728;
+              </p>
+            </div>
           </div>
         </div>
       )}

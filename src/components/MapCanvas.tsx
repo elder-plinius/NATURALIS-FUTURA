@@ -454,6 +454,14 @@ function CreatureNode({
       title={isDiscovered ? creature.name : "???"}
     >
       <div className={`relative flex items-center justify-center transition-all duration-200 ${isSelected ? "scale-[1.3]" : "group-hover:scale-110"}`}>
+        {/* Status halo — pulsing ring for discovered creatures */}
+        {isDiscovered && (
+          <div className="absolute rounded-full animate-[halo-pulse_3s_ease-in-out_infinite] pointer-events-none"
+            style={{
+              width: "180%", height: "180%",
+              border: `2px solid ${isContained ? "rgba(22,163,74,0.5)" : regionColor.accent + "50"}`,
+            }} />
+        )}
         {isNearPlayer && !isDiscovered && (
           <div className="absolute rounded-full animate-[threat-pulse_1.2s_ease-in-out_infinite]"
             style={{ width: "200%", height: "200%", background: `radial-gradient(circle, rgba(${regionColor.glow}, 0.35) 0%, transparent 70%)` }} />
@@ -593,6 +601,10 @@ export default function MapCanvas({
   const lastEncountered = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState({ w: 1, h: 1 });
+  const [regionBanner, setRegionBanner] = useState<Region | null>(null);
+  const currentRegionRef = useRef<string | null>(null);
+  const footprints = useRef<{x: number; y: number}[]>([]);
+  const lastFootprint = useRef({x: playerX, y: playerY});
 
   // ── Measure viewport with ResizeObserver ──
   useEffect(() => {
@@ -660,6 +672,35 @@ export default function MapCanvas({
     }
     return { nearCreatures: near, creatureDistances: dists };
   }, [playerX, playerY, discoveredSet]);
+
+  // ── Footprint trail — drop breadcrumbs as player moves ──
+  useEffect(() => {
+    const dx = playerX - lastFootprint.current.x;
+    const dy = playerY - lastFootprint.current.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 0.004) {
+      footprints.current = [...footprints.current.slice(-40), { x: playerX, y: playerY }];
+      lastFootprint.current = { x: playerX, y: playerY };
+    }
+  }, [playerX, playerY]);
+
+  // ── Region entry detection — show banner on crossing ──
+  useEffect(() => {
+    if (!mapRevealed) return;
+    const region = regions.find(r =>
+      playerX >= r.mapPosition.x &&
+      playerX <= r.mapPosition.x + r.mapPosition.width &&
+      playerY >= r.mapPosition.y &&
+      playerY <= r.mapPosition.y + r.mapPosition.height
+    );
+    if (region && region.id !== currentRegionRef.current) {
+      if (currentRegionRef.current !== null) {
+        setRegionBanner(region);
+        setTimeout(() => setRegionBanner(null), 3000);
+      }
+      currentRegionRef.current = region.id;
+    }
+  }, [playerX, playerY, mapRevealed]);
 
   return (
     <div ref={containerRef} className="relative w-full h-full overflow-hidden bg-[#0e0c0a]">
@@ -743,6 +784,17 @@ export default function MapCanvas({
               {hope.name.replace("THE ", "")}
             </span>
           </div>
+        ))}
+
+        {/* ── Footprint breadcrumb trail ── */}
+        {mapRevealed && footprints.current.map((fp, i) => (
+          <div key={`fp-${i}`} className="absolute w-1 h-1 rounded-full pointer-events-none"
+            style={{
+              left: `${fp.x * 100}%`, top: `${fp.y * 100}%`,
+              transform: "translate(-50%, -50%)",
+              backgroundColor: `rgba(180, 150, 100, ${(i / footprints.current.length) * 0.2})`,
+              zIndex: 2,
+            }} />
         ))}
 
         {/* ── Player sprite ── */}
@@ -834,6 +886,38 @@ export default function MapCanvas({
             style={{ fontFamily: "var(--font-display)", textShadow: "0 0 10px rgba(0,0,0,0.9), 0 0 20px rgba(180,130,50,0.15)" }}>
             Something stirs nearby...
           </p>
+        </div>
+      )}
+
+      {/* Region entry banner */}
+      {regionBanner && (
+        <div className="absolute pointer-events-none z-30" style={{
+          left: "50%", top: "25%",
+          animation: "region-enter 3s ease-out forwards",
+        }}>
+          <div className="text-center">
+            <p className="text-[10px] tracking-[0.5em] uppercase" style={{
+              fontFamily: "var(--font-display)",
+              color: regionBanner.color.accent + "60",
+              textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+            }}>
+              Entering
+            </p>
+            <h2 className="text-xl md:text-2xl font-bold tracking-[0.2em] mt-1" style={{
+              fontFamily: "var(--font-display)",
+              color: regionBanner.color.accent + "90",
+              textShadow: `0 0 20px ${regionBanner.color.accent}40, 0 2px 8px rgba(0,0,0,0.8)`,
+            }}>
+              {regionBanner.name.toUpperCase()}
+            </h2>
+            <p className="text-[10px] italic mt-1" style={{
+              color: regionBanner.color.accent + "40",
+              fontFamily: "var(--font-body)",
+              textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+            }}>
+              {regionBanner.subtitle}
+            </p>
+          </div>
         </div>
       )}
 

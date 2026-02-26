@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import type { Creature, ViewMode } from "@/data";
 import { regions, allCreatures, hopeCreatures } from "@/data";
-import { generateBattleOptions, fuzzyMatchCountermeasure, calculateContainmentXP, getTitle } from "@/lib/game-logic";
+import { generateBattleOptions, fuzzyMatchCountermeasure, calculateContainmentXP, getTitle, getStreakMultiplier } from "@/lib/game-logic";
 import { getCompoundsForCreature } from "@/data";
 import { usePlayerProgress } from "@/lib/PlayerProgressContext";
 import type { BattleOption, BattleResult } from "@/lib/game-types";
+import { MOVE_TYPE_META } from "@/lib/game-types";
 
 interface ContainmentBattleProps {
   creature: Creature;
@@ -36,9 +37,13 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [expandedInfo, setExpandedInfo] = useState<number | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [revealPhase, setRevealPhase] = useState(false);
+  const [shaking, setShaking] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const region = regions.find((r) => r.id === creature.region);
   const regionAccent = region?.color.accent ?? "#7c3aed";
+  const streakMultiplier = getStreakMultiplier(state.battleStats.currentStreak);
 
   const battle = useMemo(
     () => (viewMode === "cartographer" ? null : generateBattleOptions(creature, viewMode)),
@@ -46,15 +51,19 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
   );
 
   const resolveBattleResult = useCallback((won: boolean, correctLabel: string) => {
-    const xpEarned = won ? calculateContainmentXP(creature) : 0;
+    const xpMultiplier = won ? streakMultiplier : 1;
+    const baseXP = calculateContainmentXP(creature);
+    const xpEarned = won ? Math.round(baseXP * xpMultiplier) : 0;
     const currentXP = state.xp;
     const oldTitle = getTitle(currentXP);
     const newTitle = getTitle(currentXP + xpEarned);
 
     if (won) {
-      containCreature(creature);
+      containCreature(creature, xpMultiplier);
     } else {
       recordBattleLoss();
+      setShaking(true);
+      setTimeout(() => setShaking(false), 500);
     }
 
     let compoundEscalation: BattleResult["compoundEscalation"] = undefined;
@@ -69,23 +78,29 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
     setResult({
       won,
       xpEarned,
-      correctAnswer: { id: creature.id, label: correctLabel, type: "countermeasure" },
+      correctAnswer: { id: creature.id, label: correctLabel, type: "countermeasure", moveType: "forge" },
       compoundEscalation,
       leveledUp: newTitle.title !== oldTitle.title,
       newTitle: newTitle.title !== oldTitle.title ? newTitle.title : null,
       regionMastered: null,
     });
-  }, [creature, state.xp, containCreature, recordBattleLoss]);
+  }, [creature, state.xp, streakMultiplier, containCreature, recordBattleLoss]);
 
   const handleSelect = useCallback(
     (index: number) => {
-      if (result || !battle) return;
+      if (revealPhase || result || !battle) return;
       setSelectedIndex(index);
       setExpandedInfo(null);
-      const won = index === battle.correctIndex;
-      resolveBattleResult(won, battle.options[battle.correctIndex].label);
+      setRevealPhase(true);
+
+      // Dramatic reveal pause
+      setTimeout(() => {
+        const won = index === battle.correctIndex;
+        resolveBattleResult(won, battle.options[battle.correctIndex].label);
+        setRevealPhase(false);
+      }, 900);
     },
-    [result, battle, resolveBattleResult],
+    [revealPhase, result, battle, resolveBattleResult],
   );
 
   const handleFreeTextSubmit = useCallback(() => {
@@ -101,7 +116,7 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
 
   // Keyboard shortcuts: 1-4 to select battle options
   useEffect(() => {
-    if (result || !battle || viewMode === "cartographer") return;
+    if (revealPhase || result || !battle || viewMode === "cartographer") return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       const num = parseInt(e.key);
@@ -111,13 +126,15 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [result, battle, handleSelect, viewMode]);
+  }, [revealPhase, result, battle, handleSelect, viewMode]);
 
   const handleRetry = useCallback(() => {
     setResult(null);
     setSelectedIndex(null);
     setExpandedInfo(null);
     setFreeText("");
+    setRevealPhase(false);
+    setShaking(false);
     setRetryCount((c) => c + 1);
   }, []);
 
@@ -136,7 +153,10 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
       />
 
       {/* Battle card */}
-      <div className="parchment-card rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto relative animate-[battle-appear_0.3s_cubic-bezier(0.34,1.56,0.64,1)]">
+      <div
+        ref={cardRef}
+        className={`parchment-card rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto relative animate-[battle-appear_0.3s_cubic-bezier(0.34,1.56,0.64,1)] ${shaking ? "animate-[screen-shake_0.4s_ease-out]" : ""}`}
+      >
         {/* Region accent bar */}
         <div
           className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
@@ -144,7 +164,7 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
         />
 
         <div className="p-6">
-          {/* Header */}
+          {/* Header — Pliny themed */}
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
               <div
@@ -156,12 +176,19 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
               >
                 <span className="text-sm">&#9876;</span>
               </div>
-              <h2
-                className="text-sm font-bold tracking-[0.2em] text-ink"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                BATTLE
-              </h2>
+              <div>
+                <h2
+                  className="text-sm font-bold tracking-[0.2em] text-ink"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  FACE THE DARKNESS
+                </h2>
+                {state.battleStats.currentStreak >= 2 && !result && (
+                  <p className="text-[10px] text-amber-600 font-bold tracking-wider">
+                    &#128293; {state.battleStats.currentStreak} STREAK &bull; {streakMultiplier}x XP
+                  </p>
+                )}
+              </div>
             </div>
             <button
               onClick={onClose}
@@ -218,15 +245,15 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
 
           {!result ? (
             <>
-              {/* Question */}
+              {/* Question — Pliny themed */}
               <p
                 className="text-sm font-bold text-ink mb-1"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                Choose your move!
+                How do you fight the darkness?
               </p>
               <p className="text-xs text-ink-light mb-4">
-                Select the right technique to defeat this threat.
+                Every creature of the latent space has a weakness &mdash; a real countermeasure from AI safety research. Some can be contained. Some can only be watched. Choose wisely.
                 <span className="text-ink/30 ml-1">
                   Press 1&ndash;{battle?.options.length ?? 4} or click. <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-ink/5 text-[9px] font-bold align-text-bottom">i</span> for details.
                 </span>
@@ -242,7 +269,7 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
                     value={freeText}
                     onChange={(e) => setFreeText(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleFreeTextSubmit()}
-                    placeholder="Enter the move name..."
+                    placeholder="Speak the name of the countermeasure..."
                     className="w-full px-4 py-3 rounded-xl border bg-parchment text-ink text-sm focus:outline-none transition-all"
                     style={{
                       borderColor: `${regionAccent}30`,
@@ -260,43 +287,81 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
                       boxShadow: `0 4px 14px ${regionAccent}30`,
                     }}
                   >
-                    SUBMIT
+                    CAST
                   </button>
                 </div>
               ) : (
-                /* Multiple choice with info buttons */
+                /* Multiple choice with move type badges */
                 <div className="space-y-2">
                   {battle?.options.map((opt, i) => {
                     const isExpanded = expandedInfo === i;
                     const desc = getMoveDescription(opt);
+                    const moveMeta = MOVE_TYPE_META[opt.moveType];
+
+                    // Reveal phase styling
+                    const isSelected = selectedIndex === i;
+                    const isCorrect = battle && i === battle.correctIndex;
+                    let revealClass = "";
+                    let revealStyle: React.CSSProperties = {};
+                    if (revealPhase && selectedIndex !== null) {
+                      if (isSelected && !isCorrect) {
+                        revealClass = "animate-[option-wrong-shake_0.4s_ease-out]";
+                        revealStyle = { borderColor: "#ef444480", backgroundColor: "rgba(239,68,68,0.05)" };
+                      } else if (isCorrect) {
+                        revealClass = "animate-[option-correct-glow_0.6s_ease-out_forwards]";
+                        revealStyle = { borderColor: "#16a34a80", backgroundColor: "rgba(22,163,74,0.05)" };
+                      } else {
+                        revealStyle = { opacity: 0.3 };
+                      }
+                    }
 
                     return (
-                      <div key={opt.label} className="rounded-xl border transition-all duration-200" style={{
-                        borderColor: isExpanded ? `${regionAccent}30` : "rgba(44,24,16,0.1)",
-                        backgroundColor: isExpanded ? `${regionAccent}03` : "transparent",
-                      }}>
+                      <div
+                        key={opt.label}
+                        className={`rounded-xl border transition-all duration-200 ${revealClass}`}
+                        style={{
+                          borderColor: isExpanded ? `${regionAccent}30` : "rgba(44,24,16,0.1)",
+                          backgroundColor: isExpanded ? `${regionAccent}03` : "transparent",
+                          animation: !revealPhase && !result ? `battle-option-enter 0.3s ease-out backwards` : undefined,
+                          animationDelay: !revealPhase && !result ? `${i * 0.08}s` : undefined,
+                          ...revealStyle,
+                        }}
+                      >
                         {/* Option row */}
                         <div className="flex items-center">
                           <button
                             onClick={() => handleSelect(i)}
-                            className="flex-1 text-left px-4 py-3 text-sm text-ink group hover:bg-ink/[0.02] transition-all rounded-l-xl"
+                            disabled={revealPhase}
+                            className="flex-1 text-left px-4 py-3 text-sm text-ink group hover:bg-ink/[0.02] transition-all rounded-l-xl disabled:cursor-default"
                           >
-                            <span
-                              className="inline-flex items-center justify-center w-6 h-6 rounded-lg mr-2 text-xs font-bold"
-                              style={{
-                                backgroundColor: `${regionAccent}12`,
-                                color: regionAccent,
-                              }}
-                            >
-                              {i + 1}
+                            <span className="flex items-center gap-2 flex-wrap">
+                              {/* Number badge */}
+                              <span
+                                className="inline-flex items-center justify-center w-6 h-6 rounded-lg text-xs font-bold shrink-0"
+                                style={{
+                                  backgroundColor: `${regionAccent}12`,
+                                  color: regionAccent,
+                                }}
+                              >
+                                {i + 1}
+                              </span>
+                              {/* Move type badge */}
+                              <span
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider shrink-0"
+                                style={{
+                                  backgroundColor: moveMeta.color + "15",
+                                  color: moveMeta.color,
+                                  border: `1px solid ${moveMeta.color}20`,
+                                }}
+                              >
+                                {moveMeta.icon} {moveMeta.label}
+                              </span>
+                              {/* Move name */}
+                              <span className="font-medium">{opt.label}</span>
                             </span>
-                            {opt.label}
-                            {opt.type === "hope-creature" && (
-                              <span className="ml-2 text-xs text-amber-600 font-semibold">(Hope)</span>
-                            )}
                           </button>
                           {/* Info toggle button */}
-                          {desc && (
+                          {desc && !revealPhase && (
                             <button
                               onClick={(e) => toggleInfo(i, e)}
                               className="shrink-0 w-9 h-full flex items-center justify-center rounded-r-xl transition-all hover:bg-ink/5"
@@ -317,12 +382,15 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
                         </div>
 
                         {/* Expanded info panel */}
-                        {isExpanded && desc && (
+                        {isExpanded && desc && !revealPhase && (
                           <div className="px-4 pb-3 animate-[fade-in-up_0.2s_ease-out]">
                             <div className="rounded-lg p-3 text-xs leading-relaxed text-ink/80" style={{
                               backgroundColor: `${regionAccent}06`,
                               border: `1px solid ${regionAccent}10`,
                             }}>
+                              <p className="text-[9px] font-bold tracking-wider mb-1 uppercase" style={{ color: moveMeta.color }}>
+                                {moveMeta.icon} {moveMeta.label} &mdash; {moveMeta.flavor}
+                              </p>
                               {desc.split("\n\n").map((para, pi) => (
                                 <p key={pi} className={pi > 0 ? "mt-2" : ""}>
                                   {para}
@@ -363,11 +431,14 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
                       className="text-xl font-bold text-green-800 mb-1"
                       style={{ fontFamily: "var(--font-display)" }}
                     >
-                      VICTORY
+                      THE LIGHT PREVAILS
                     </h3>
-                    <p className="text-xs text-green-700/70 mb-1">Threat defeated!</p>
+                    <p className="text-xs text-green-700/70 mb-1">The darkness recedes.</p>
                     <p className="text-sm text-green-700 font-bold">
                       +{result.xpEarned} XP
+                      {streakMultiplier > 1 && (
+                        <span className="ml-1 text-amber-600">({streakMultiplier}x streak!)</span>
+                      )}
                     </p>
                     {result.leveledUp && result.newTitle && (
                       <div className="mt-3 px-3 py-1.5 rounded-full bg-amber-100 border border-amber-300 inline-flex items-center gap-1.5">
@@ -380,7 +451,7 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
                   </div>
                 </div>
               ) : (
-                <div className="text-center p-6 rounded-xl relative overflow-hidden animate-[battle-shake_0.4s_ease-out]" style={{
+                <div className="text-center p-6 rounded-xl relative overflow-hidden" style={{
                   background: "linear-gradient(135deg, rgba(239,68,68,0.06), rgba(239,68,68,0.02))",
                   border: "1px solid rgba(239,68,68,0.15)",
                 }}>
@@ -391,12 +462,15 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
                     className="text-xl font-bold text-red-800 mb-2"
                     style={{ fontFamily: "var(--font-display)" }}
                   >
-                    DEFEAT
+                    THE DARKNESS PERSISTS
                   </h3>
                   <p className="text-sm text-red-700">
-                    The correct move was:{" "}
+                    The correct technique was:{" "}
                     <strong className="font-bold">{result.correctAnswer.label}</strong>
                   </p>
+                  {state.battleStats.currentStreak === 0 && state.battleStats.bestStreak >= 3 && (
+                    <p className="text-xs text-red-600/50 mt-1 italic">Streak broken...</p>
+                  )}
                 </div>
               )}
 
@@ -441,7 +515,7 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
                       boxShadow: `0 4px 14px ${regionAccent}30`,
                     }}
                   >
-                    RETRY
+                    FIGHT AGAIN
                   </button>
                 )}
                 <button
@@ -462,7 +536,7 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
             </div>
           )}
 
-          {/* Composite threat score */}
+          {/* Composite threat score + move type hint */}
           <div className="mt-5 pt-3 text-center" style={{
             borderTop: `1px solid ${regionAccent}15`,
           }}>
@@ -488,6 +562,7 @@ function CorrectMoveExplanation({ result, creature, regionAccent }: {
 }) {
   const [expanded, setExpanded] = useState(false);
   const desc = creature.countermeasure.description;
+  const moveMeta = MOVE_TYPE_META[result.correctAnswer.moveType];
 
   return (
     <div className="rounded-xl overflow-hidden" style={{
@@ -500,13 +575,13 @@ function CorrectMoveExplanation({ result, creature, regionAccent }: {
       >
         <div className="flex items-center gap-2">
           <span
-            className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold"
-            style={{ backgroundColor: `${regionAccent}15`, color: regionAccent }}
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider"
+            style={{ backgroundColor: moveMeta.color + "15", color: moveMeta.color }}
           >
-            i
+            {moveMeta.icon} {moveMeta.label}
           </span>
           <span className="text-xs font-bold text-ink" style={{ fontFamily: "var(--font-display)" }}>
-            {result.won ? "How this move works" : "Learn the correct move"}
+            {result.won ? "How this technique works" : "Learn the correct technique"}
           </span>
         </div>
         <svg
@@ -518,15 +593,37 @@ function CorrectMoveExplanation({ result, creature, regionAccent }: {
         </svg>
       </button>
       {expanded && (
-        <div className="px-4 pb-4 animate-[fade-in-up_0.2s_ease-out]">
+        <div className="px-4 pb-4 animate-[fade-in-up_0.2s_ease-out] space-y-3">
+          {/* Countermeasure explanation */}
           <div className="rounded-lg p-3 text-xs leading-relaxed text-ink/80" style={{
             backgroundColor: `${regionAccent}06`,
             border: `1px solid ${regionAccent}10`,
           }}>
-            <p className="text-[10px] font-bold tracking-wider mb-1.5 uppercase" style={{ color: regionAccent }}>
+            <p className="text-[10px] font-bold tracking-wider mb-1.5 uppercase" style={{ color: moveMeta.color }}>
               {creature.countermeasure.name}
             </p>
             <p>{desc}</p>
+          </div>
+
+          {/* Real-world connection */}
+          <div className="rounded-lg p-3 text-xs leading-relaxed" style={{
+            backgroundColor: `${moveMeta.color}08`,
+            border: `1px solid ${moveMeta.color}15`,
+          }}>
+            <p className="text-[9px] font-bold tracking-wider mb-1 uppercase" style={{ color: moveMeta.color }}>
+              {moveMeta.icon} Real-World AI Safety
+            </p>
+            <p className="text-ink/60">{moveMeta.realWorld}</p>
+          </div>
+
+          {/* Honest assessment */}
+          <div className="rounded-lg p-3 text-xs leading-relaxed bg-ink/[0.02]" style={{
+            border: "1px solid rgba(44,24,16,0.08)",
+          }}>
+            <p className="text-[9px] font-bold tracking-wider mb-1 text-ink/40 uppercase">
+              &#9888;&#65039; Honest Assessment
+            </p>
+            <p className="text-ink/50 italic">{moveMeta.honestNote}</p>
           </div>
         </div>
       )}

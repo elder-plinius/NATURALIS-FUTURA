@@ -27,7 +27,7 @@ interface PlayerProgressValue {
   totalCreatures: number;
   // Actions — synchronous checks, no race conditions
   discoverCreature: (id: string) => boolean;
-  containCreature: (creature: Creature) => number;
+  containCreature: (creature: Creature, xpMultiplier?: number) => number;
   recordBattleLoss: () => void;
   resetProgress: () => void;
 }
@@ -94,10 +94,10 @@ export function PlayerProgressProvider({ children }: { children: ReactNode }) {
     return true;
   }, []);
 
-  const containCreature = useCallback((creature: Creature): number => {
+  const containCreature = useCallback((creature: Creature, xpMultiplier = 1): number => {
     if (containedRef.current.has(creature.id)) return 0;
     containedRef.current.add(creature.id);
-    const xpEarned = calculateContainmentXP(creature);
+    const xpEarned = Math.round(calculateContainmentXP(creature) * xpMultiplier);
     setState((prev) => {
       if (prev.contained.includes(creature.id)) return prev;
       const newContained = [...prev.contained, creature.id];
