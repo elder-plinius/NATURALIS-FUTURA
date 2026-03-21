@@ -37,6 +37,7 @@ export interface Creature {
   mythicOrigin: string;
   naturalAnalogue: string;
   sciFiEcho: string;
+  innerWorldEcho: string;
   technicalSpec: string;
   threatGradient: ThreatGradient;
   countermeasure: {

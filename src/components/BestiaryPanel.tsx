@@ -212,6 +212,11 @@ export default function BestiaryPanel({
         </section>
 
         <section className="mb-6">
+          <SectionHeader label="Inner World Echo" accent={regionAccent} />
+          <p className="text-sm leading-relaxed text-ink">{creature.innerWorldEcho}</p>
+        </section>
+
+        <section className="mb-6">
           <SectionHeader label="The Danger" accent={regionAccent} />
           {viewMode === "novice" ? (
             <p className="text-sm leading-relaxed text-ink">
