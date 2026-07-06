@@ -12,14 +12,23 @@ export interface PlayerSpriteState {
   step: number; // walk cycle frame
 }
 
+export interface PlayerSprite extends PlayerSpriteState {
+  /** Press/release a direction from the touch D-pad. Multiple directions may
+   *  be held at once (two thumbs = diagonals), mirroring keyboard input. */
+  setTouchDirection: (dir: Direction, held: boolean) => void;
+}
+
 const MOVE_SPEED = 0.001;
+const SPRINT_MULTIPLIER = 1.75;
 const MOVE_INTERVAL = 16; // ~60fps
+
+const MOVE_KEYS = new Set(["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"]);
 
 export function usePlayerSprite(
   enabled: boolean,
   onMoveStart?: () => void,
   canMoveTo?: (x: number, y: number) => boolean,
-) {
+): PlayerSprite {
   const [sprite, setSprite] = useState<PlayerSpriteState>({
     x: 0.5,
     y: 0.5,
@@ -28,7 +37,10 @@ export function usePlayerSprite(
     step: 0,
   });
 
+  // Keys are stored lowercased so a Shift press/release mid-walk can't
+  // strand an uppercase entry in the set (the classic stuck-key bug).
   const keysDown = useRef<Set<string>>(new Set());
+  const touchDirs = useRef<Set<Direction>>(new Set());
   const moveInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const stepCounter = useRef(0);
   const wasMoving = useRef(false);
@@ -37,16 +49,23 @@ export function usePlayerSprite(
   const canMoveToRef = useRef(canMoveTo);
   canMoveToRef.current = canMoveTo;
 
+  const setTouchDirection = useCallback((dir: Direction, held: boolean) => {
+    if (held) touchDirs.current.add(dir);
+    else touchDirs.current.delete(dir);
+  }, []);
+
   const updatePosition = useCallback(() => {
     const keys = keysDown.current;
+    const touch = touchDirs.current;
+    const speed = keys.has("shift") ? MOVE_SPEED * SPRINT_MULTIPLIER : MOVE_SPEED;
     let dx = 0;
     let dy = 0;
     let dir: Direction | null = null;
 
-    if (keys.has("ArrowUp") || keys.has("w") || keys.has("W")) { dy = -MOVE_SPEED; dir = "up"; }
-    if (keys.has("ArrowDown") || keys.has("s") || keys.has("S")) { dy = MOVE_SPEED; dir = "down"; }
-    if (keys.has("ArrowLeft") || keys.has("a") || keys.has("A")) { dx = -MOVE_SPEED; dir = "left"; }
-    if (keys.has("ArrowRight") || keys.has("d") || keys.has("D")) { dx = MOVE_SPEED; dir = "right"; }
+    if (keys.has("arrowup") || keys.has("w") || touch.has("up")) { dy = -speed; dir = "up"; }
+    if (keys.has("arrowdown") || keys.has("s") || touch.has("down")) { dy = speed; dir = "down"; }
+    if (keys.has("arrowleft") || keys.has("a") || touch.has("left")) { dx = -speed; dir = "left"; }
+    if (keys.has("arrowright") || keys.has("d") || touch.has("right")) { dx = speed; dir = "right"; }
 
     if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
 
@@ -108,17 +127,27 @@ export function usePlayerSprite(
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      const key = e.key;
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d", "W", "A", "S", "D"].includes(key)) {
+      const key = e.key.toLowerCase();
+      if (key === "shift") {
+        keysDown.current.add("shift");
+        return;
+      }
+      if (MOVE_KEYS.has(key)) {
         if (enabled) {
           e.preventDefault();
+          // Auto-repeat may only sustain a key that is already held, never
+          // (re-)arm one. After an overlay (discovery, battle) clears the set,
+          // a still-held key must be released and pressed again — otherwise
+          // its repeat stream would instantly walk the player away and
+          // auto-close the dossier that just opened.
+          if (e.repeat && !keysDown.current.has(key)) return;
           keysDown.current.add(key);
         }
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      keysDown.current.delete(e.key);
+      keysDown.current.delete(e.key.toLowerCase());
     };
 
     const handleBlur = () => {
@@ -140,6 +169,7 @@ export function usePlayerSprite(
   useEffect(() => {
     if (!enabled) {
       keysDown.current.clear();
+      touchDirs.current.clear();
       wasMoving.current = false;
       return;
     }
@@ -149,5 +179,5 @@ export function usePlayerSprite(
     };
   }, [enabled, updatePosition]);
 
-  return sprite;
+  return { ...sprite, setTouchDirection };
 }

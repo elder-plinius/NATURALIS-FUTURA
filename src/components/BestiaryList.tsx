@@ -1,12 +1,16 @@
 "use client";
 
 import { allCreatures, regions, Creature, getCreaturesByRegion } from "@/data";
+import { usePlayerProgress } from "@/lib/PlayerProgressContext";
+import StatusSeal from "./StatusSeal";
 
 interface BestiaryListProps {
   onSelectCreature: (creature: Creature) => void;
 }
 
 export default function BestiaryList({ onSelectCreature }: BestiaryListProps) {
+  const { discoveredSet, isLoaded } = usePlayerProgress();
+
   return (
     <div className="p-6 md:p-8 max-w-5xl mx-auto">
       <h2
@@ -16,13 +20,15 @@ export default function BestiaryList({ onSelectCreature }: BestiaryListProps) {
         THE BESTIARY
       </h2>
       <p className="text-sm text-ink-light mb-8">
-        A complete catalog of {allCreatures.length} threat archetypes across{" "}
+        {discoveredSet.size} of {allCreatures.length} threat archetypes recorded across{" "}
         {regions.length} regions. Every danger that advanced AI could pose has
-        already appeared in nature, myth, or story.
+        already appeared in nature, myth, or story &mdash; walk the map to record
+        the rest.
       </p>
 
       {regions.map((region) => {
         const creatures = getCreaturesByRegion(region.id);
+        const foundHere = creatures.filter((c) => discoveredSet.has(c.id)).length;
         return (
           <div key={region.id} className="mb-10">
             {/* Region header */}
@@ -55,7 +61,7 @@ export default function BestiaryList({ onSelectCreature }: BestiaryListProps) {
                 }}
               />
               <span className="text-xs text-ink-light font-mono">
-                {creatures.length}
+                {foundHere}/{creatures.length}
               </span>
             </div>
             <p className="text-xs italic text-ink-light mb-4 pl-8">
@@ -64,6 +70,13 @@ export default function BestiaryList({ onSelectCreature }: BestiaryListProps) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-8">
               {creatures.map((creature) => {
+                // Until hydration completes, render every card as discovered
+                // so a completed save doesn't flash a wall of ???
+                const isDiscovered = !isLoaded || discoveredSet.has(creature.id);
+                if (!isDiscovered) {
+                  return <UnrecordedCard key={creature.id} accent={region.color.accent} />;
+                }
+
                 const composite =
                   creature.threatGradient.likelihood +
                   creature.threatGradient.impact +
@@ -104,7 +117,7 @@ export default function BestiaryList({ onSelectCreature }: BestiaryListProps) {
                           <h4 className="text-sm font-bold text-ink truncate">
                             {creature.name}
                           </h4>
-                          <StatusPill status={creature.currentStatus.status} />
+                          <StatusSeal status={creature.currentStatus.status} />
                         </div>
                         <p className="text-xs text-ink-light line-clamp-2 mb-2">
                           {creature.mythicOrigin.split(".")[0]}.
@@ -147,27 +160,38 @@ export default function BestiaryList({ onSelectCreature }: BestiaryListProps) {
   );
 }
 
-function StatusPill({ status }: { status: string }) {
-  const config = {
-    confirmed: { bg: "#fef2f2", border: "#fecaca", text: "#991b1b", dot: "#ef4444" },
-    emerging: { bg: "#fffbeb", border: "#fde68a", text: "#92400e", dot: "#f59e0b" },
-    theoretical: { bg: "#f9fafb", border: "#e5e7eb", text: "#6b7280", dot: "#9ca3af" },
-  };
-  const c = config[status as keyof typeof config] ?? config.theoretical;
+/** An undiscovered specimen — a blank plate in the naturalist's folio. */
+function UnrecordedCard({ accent }: { accent: string }) {
   return (
-    <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold shrink-0"
-      style={{
-        backgroundColor: c.bg,
-        border: `1px solid ${c.border}`,
-        color: c.text,
-      }}
+    <div
+      className="parchment-card rounded-xl p-4 relative overflow-hidden opacity-70"
+      aria-label="Unrecorded specimen"
     >
-      <span
-        className={`w-1.5 h-1.5 rounded-full ${status === "confirmed" ? "animate-pulse" : ""}`}
-        style={{ backgroundColor: c.dot }}
+      <div
+        className="absolute top-0 left-0 w-1 h-full rounded-l-xl"
+        style={{ backgroundColor: accent + "25" }}
       />
-      {status}
-    </span>
+      <div className="flex items-start gap-3">
+        <div
+          className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border border-dashed"
+          style={{ borderColor: "rgba(44,24,16,0.2)", background: "rgba(44,24,16,0.03)" }}
+        >
+          <span className="text-xl text-ink/25 font-bold" style={{ fontFamily: "var(--font-display)" }}>
+            ?
+          </span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4
+            className="text-sm font-bold text-ink/30 tracking-[0.3em] mb-1"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            ? ? ?
+          </h4>
+          <p className="text-xs text-ink/35 italic">
+            An unrecorded specimen. Walk the map &mdash; its page awaits your torch.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }

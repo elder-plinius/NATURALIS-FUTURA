@@ -12,6 +12,11 @@ import PlayerHUD from "@/components/PlayerHUD";
 import ProgressPanel from "@/components/ProgressPanel";
 import ContainmentBattle from "@/components/ContainmentBattle";
 import DiscoveryAnimation from "@/components/DiscoveryAnimation";
+import VictoryScreen from "@/components/VictoryScreen";
+import {
+  GlyphMap, GlyphMatrix, GlyphBestiary, GlyphCompounds, GlyphObservatory,
+  GlyphProgress, GlyphSearch, GlyphCandleLit, GlyphCandleOut, GlyphHelp,
+} from "@/components/InkGlyphs";
 import { PlayerProgressProvider, usePlayerProgress } from "@/lib/PlayerProgressContext";
 import { usePlayerSprite } from "@/lib/usePlayerSprite";
 import { isBlockedAt } from "@/components/MapCanvas";
@@ -34,13 +39,17 @@ function AppContent() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [masteryToast, setMasteryToast] = useState<string | null>(null);
+  const [showVictory, setShowVictory] = useState(false);
   const prevMasteredRef = useRef<Set<string> | null>(null);
+  const prevCompleteRef = useRef<boolean | null>(null);
+  const pendingVictoryRef = useRef(false);
 
-  const { state, discoveredSet, containedSet, discoverCreature } = usePlayerProgress();
+  const { state, discoveredSet, containedSet, discoverCreature, containmentCount, totalCreatures, isLoaded } =
+    usePlayerProgress();
 
   // Player movement enabled on map view when no full-screen overlays are open
   // Note: selectedCreature does NOT block movement — onMoveStart auto-closes it
-  const movementEnabled = mapRevealed && activeView === "map" && !showSearch && !battleCreature && !discoveryCreature && !showTutorial && !showShortcuts;
+  const movementEnabled = mapRevealed && activeView === "map" && !showSearch && !battleCreature && !discoveryCreature && !showTutorial && !showShortcuts && !showVictory;
 
   const handleMoveStart = useCallback(() => {
     // Auto-close panels when the player starts walking
@@ -104,7 +113,9 @@ function AppContent() {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       if (e.key === "Escape") {
-        if (showShortcuts) {
+        if (showVictory) {
+          setShowVictory(false);
+        } else if (showShortcuts) {
           setShowShortcuts(false);
         } else if (showTutorial) {
           setShowTutorial(false);
@@ -116,18 +127,18 @@ function AppContent() {
           setSelectedCreature(null);
         }
       }
-      if (e.key === "?" && !showSearch && !battleCreature && !showShortcuts) {
+      if (e.key === "?" && !showSearch && !battleCreature && !showShortcuts && !showVictory) {
         e.preventDefault();
         setShowShortcuts(true);
       }
-      if (e.key === "/" && !showSearch && !battleCreature && !(e.target instanceof HTMLInputElement)) {
+      if (e.key === "/" && !showSearch && !battleCreature && !showVictory && !(e.target instanceof HTMLInputElement)) {
         e.preventDefault();
         setShowSearch(true);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showSearch, selectedCreature, battleCreature, showTutorial, showShortcuts]);
+  }, [showSearch, selectedCreature, battleCreature, showTutorial, showShortcuts, showVictory]);
 
   // Detect new region mastery for celebration toast
   useEffect(() => {
@@ -148,6 +159,39 @@ function AppContent() {
     }
     prevMasteredRef.current = new Set(mastered);
   }, [state.regionMastery]);
+
+  // Endgame capstone — fire once when the last creature is contained (100% mastery).
+  // Gated on isLoaded so the async localStorage hydration (empty -> saved state) doesn't
+  // read as a "completion" and re-pop the capstone on every reload of a finished save.
+  // The final containment happens INSIDE the battle overlay, so the capstone is held
+  // pending until that battle closes — the player gets to see their last "+XP" card.
+  useEffect(() => {
+    if (!isLoaded) return;
+    const complete = totalCreatures > 0 && containmentCount >= totalCreatures;
+    if (prevCompleteRef.current === null) {
+      // First observation after hydration — establish the baseline, never fire.
+      prevCompleteRef.current = complete;
+      return;
+    }
+    if (!prevCompleteRef.current && complete) {
+      pendingVictoryRef.current = true;
+    }
+    prevCompleteRef.current = complete;
+  }, [isLoaded, containmentCount, totalCreatures]);
+
+  useEffect(() => {
+    if (pendingVictoryRef.current && !battleCreature) {
+      pendingVictoryRef.current = false;
+      setShowVictory(true);
+    }
+  }, [battleCreature, containmentCount]);
+
+  // Allow re-opening the capstone (e.g. from the Cartographer's Journal) once complete.
+  useEffect(() => {
+    const reopen = () => setShowVictory(true);
+    window.addEventListener("naturalis:show-victory", reopen);
+    return () => window.removeEventListener("naturalis:show-victory", reopen);
+  }, []);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-parchment">
@@ -174,6 +218,7 @@ function AppContent() {
                   setSelectedCreature(null);
                 }}
                 onEncounterCreature={handleEncounter}
+                onTouchDirection={player.setTouchDirection}
                 selectedCreature={selectedCreature}
                 selectedRegion={selectedRegion}
                 showHope={showHope}
@@ -255,12 +300,12 @@ function AppContent() {
           <div className="flex items-center justify-between max-w-7xl mx-auto gap-2">
             <div className="flex gap-1 md:gap-2">
               {([
-                { id: "map" as ActiveView, label: "Map", icon: "🗺️" },
-                { id: "risk-matrix" as ActiveView, label: "Risk Matrix", icon: "📊" },
-                { id: "bestiary" as ActiveView, label: "Bestiary", icon: "📖" },
-                { id: "compounds" as ActiveView, label: "Compounds", icon: "⚡" },
-                { id: "dashboard" as ActiveView, label: "Observatory", icon: "📡" },
-                { id: "progress" as ActiveView, label: "Progress", icon: "🏆" },
+                { id: "map" as ActiveView, label: "Map", Glyph: GlyphMap },
+                { id: "risk-matrix" as ActiveView, label: "Risk Matrix", Glyph: GlyphMatrix },
+                { id: "bestiary" as ActiveView, label: "Bestiary", Glyph: GlyphBestiary },
+                { id: "compounds" as ActiveView, label: "Compounds", Glyph: GlyphCompounds },
+                { id: "dashboard" as ActiveView, label: "Observatory", Glyph: GlyphObservatory },
+                { id: "progress" as ActiveView, label: "Progress", Glyph: GlyphProgress },
               ] as const).map((tab) => (
                 <button
                   key={tab.id}
@@ -268,24 +313,28 @@ function AppContent() {
                     setActiveView(tab.id);
                     setSelectedCreature(null);
                   }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-1.5 px-2.5 md:px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-colors ${
                     activeView === tab.id
                       ? "bg-ink text-parchment"
                       : "text-ink-light hover:bg-ink/5"
                   }`}
                   aria-current={activeView === tab.id ? "page" : undefined}
+                  aria-label={tab.label}
+                  title={tab.label}
                 >
-                  <span className="hidden md:inline">{tab.icon}</span>
-                  <span>{tab.label}</span>
+                  <tab.Glyph className="shrink-0" />
+                  <span className="hidden md:inline">{tab.label}</span>
                 </button>
               ))}
             </div>
 
             <button
               onClick={() => setShowSearch(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-ink-light hover:bg-ink/5 transition-colors border border-ink/10"
+              className="flex items-center gap-2 px-2.5 md:px-3 py-1.5 rounded-lg text-xs text-ink-light hover:bg-ink/5 transition-colors border border-ink/10"
+              aria-label="Search"
+              title="Search (/)"
             >
-              <span>&#x1F50D;</span>
+              <GlyphSearch className="shrink-0" />
               <span className="hidden md:inline">Search</span>
               <kbd className="hidden md:inline text-xs px-1 py-0.5 rounded bg-ink/5">/</kbd>
             </button>
@@ -293,17 +342,28 @@ function AppContent() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowHope(!showHope)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 md:px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-colors ${
                   showHope
                     ? "bg-amber-100 text-amber-800"
                     : "text-ink-light hover:bg-ink/5"
                 }`}
                 aria-pressed={showHope}
+                aria-label={showHope ? "Hide Light" : "Show Light"}
+                title={showHope ? "Hide the hope creatures" : "Reveal the hope creatures"}
               >
-                <span>{showHope ? "☀️" : "🌑"}</span>
+                {showHope ? <GlyphCandleLit className="shrink-0" /> : <GlyphCandleOut className="shrink-0" />}
                 <span className="hidden md:inline">
                   {showHope ? "Hide Light" : "Show Light"}
                 </span>
+              </button>
+
+              <button
+                onClick={() => setShowShortcuts(true)}
+                className="flex items-center px-2.5 py-1.5 rounded-lg text-xs text-ink-light hover:bg-ink/5 transition-colors"
+                aria-label="Help and keyboard shortcuts"
+                title="Help (?)"
+              >
+                <GlyphHelp className="shrink-0" />
               </button>
 
               <div className="hidden md:flex items-center gap-1 text-xs text-ink-light">
@@ -453,7 +513,16 @@ function AppContent() {
                 </div>
               ))}
             </div>
-            <div className="mt-4 pt-3 border-t border-ink/10">
+            <div className="mt-4 pt-3 border-t border-ink/10 space-y-3">
+              <button
+                onClick={() => {
+                  setShowShortcuts(false);
+                  setShowTutorial(true);
+                }}
+                className="w-full py-2 rounded-lg text-xs font-medium text-ink-light border border-ink/10 hover:bg-ink/5 transition-colors"
+              >
+                Replay the tutorial
+              </button>
               <p className="text-[10px] text-ink/40 text-center italic">
                 Move types: WARD &#x1F6E1; &bull; GAZE &#x1F441; &bull; RITE &#x1F4DC; &bull; SEVER &#x2694;&#xFE0F; &bull; FORGE &#x1F52E; &bull; INVOKE &#x2728;
               </p>
@@ -476,6 +545,9 @@ function AppContent() {
           </div>
         </div>
       )}
+
+      {/* Endgame capstone — The Complete Map */}
+      {showVictory && <VictoryScreen onClose={() => setShowVictory(false)} />}
     </div>
   );
 }

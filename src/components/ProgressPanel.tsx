@@ -23,6 +23,7 @@ export default function ProgressPanel() {
 
   const overallDiscovery = getOverallDiscovery(discoveredSet);
   const overallContainment = getOverallContainment(containedSet);
+  const mapComplete = containmentCount >= totalCreatures && totalCreatures > 0;
   const winRate = state.battleStats.wins + state.battleStats.losses > 0
     ? Math.round((state.battleStats.wins / (state.battleStats.wins + state.battleStats.losses)) * 100)
     : 0;
@@ -41,6 +42,23 @@ export default function ProgressPanel() {
           Track your exploration of the bestiary. Discover creatures, contain threats, master regions.
         </p>
       </div>
+
+      {/* Completion banner — the whole map is drawn */}
+      {mapComplete && (
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("naturalis:show-victory"))}
+          className="w-full mb-6 rounded-xl px-5 py-4 flex items-center gap-3 text-left bg-gradient-to-r from-amber-600 to-amber-500 text-white shadow-lg shadow-amber-500/25 hover:from-amber-500 hover:to-amber-400 transition-all"
+        >
+          <span className="text-2xl">&#128081;</span>
+          <div className="flex-1">
+            <p className="text-xs font-bold tracking-widest uppercase" style={{ fontFamily: "var(--font-display)" }}>
+              The Map Is Complete
+            </p>
+            <p className="text-sm opacity-90">Grand Cartographer &mdash; view your completion</p>
+          </div>
+          <span className="text-lg">&rarr;</span>
+        </button>
+      )}
 
       {/* Title & XP */}
       <div className="parchment-card rounded-xl p-5 mb-6">

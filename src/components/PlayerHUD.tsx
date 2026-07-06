@@ -107,7 +107,7 @@ export default function PlayerHUD() {
             </span>
           )}
           {showSaved && (
-            <span className="text-green-600/60 font-mono text-[10px] animate-[save-flash_2s_ease-out_forwards]">
+            <span className="motion-static text-green-600/60 font-mono text-[10px] animate-[save-flash_2s_ease-out_forwards]">
               &#10003; Saved
             </span>
           )}

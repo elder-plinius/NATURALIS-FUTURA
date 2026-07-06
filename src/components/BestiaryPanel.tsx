@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import {
   Creature,
   ViewMode,
@@ -7,6 +8,7 @@ import {
   getCompoundsForCreature,
   regions,
 } from "@/data";
+import StatusSeal from "./StatusSeal";
 
 interface BestiaryPanelProps {
   creature: Creature;
@@ -16,21 +18,6 @@ interface BestiaryPanelProps {
   onSetViewMode: (mode: ViewMode) => void;
   isContained?: boolean;
   onChallenge?: (creature: Creature) => void;
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const config = {
-    theoretical: { bg: "bg-gray-100", text: "text-gray-600", dot: "bg-gray-400" },
-    emerging: { bg: "bg-amber-50", text: "text-amber-800", dot: "bg-amber-500" },
-    confirmed: { bg: "bg-red-50", text: "text-red-800", dot: "bg-red-500 animate-pulse" },
-  };
-  const c = config[status as keyof typeof config] ?? config.theoretical;
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${c.bg} ${c.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
-      {status.toUpperCase()}
-    </span>
-  );
 }
 
 function ThreatBar({ value, max = 5, label, color }: { value: number; max?: number; label: string; color: string }) {
@@ -69,8 +56,15 @@ export default function BestiaryPanel({
   const regionAccent = region?.color.accent ?? "#7c3aed";
   const composite = creature.threatGradient.likelihood + creature.threatGradient.impact + creature.threatGradient.detectability;
 
+  // A new specimen starts at the top of its dossier, not wherever the
+  // previous creature's scroll position happened to be.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, [creature.id]);
+
   return (
-    <div className="bestiary-panel h-full overflow-y-auto border-l border-ink/10 relative">
+    <div ref={scrollRef} className="bestiary-panel h-full overflow-y-auto border-l border-ink/10 relative">
       {/* Region accent header bar */}
       <div
         className="absolute top-0 left-0 right-0 h-1 z-10"
@@ -116,7 +110,7 @@ export default function BestiaryPanel({
                     {region?.name}
                   </span>
                   <span className="text-ink/20">|</span>
-                  <StatusBadge status={creature.currentStatus.status} />
+                  <StatusSeal status={creature.currentStatus.status} />
                 </div>
               </div>
             </div>
@@ -175,15 +169,16 @@ export default function BestiaryPanel({
         ) : onChallenge ? (
           <button
             onClick={() => onChallenge(creature)}
-            className="mb-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm tracking-wide transition-all duration-200 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
+            className="mb-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-bold text-sm tracking-[0.25em] transition-all duration-200 text-(--writ) hover:bg-(--writ) hover:text-white hover:shadow-lg active:scale-[0.98]"
             style={{
-              background: `linear-gradient(135deg, ${regionAccent}, ${regionAccent}cc)`,
-              color: "#fff",
-              boxShadow: `0 4px 14px ${regionAccent}40`,
+              ["--writ" as string]: regionAccent,
+              fontFamily: "var(--font-display)",
+              border: `1px solid ${regionAccent}70`,
+              boxShadow: `inset 0 0 0 3px transparent, inset 0 0 0 3.5px ${regionAccent}30`,
             }}
           >
             <span className="text-base">&#9876;</span>
-            BATTLE
+            ISSUE THE CHALLENGE
           </button>
         ) : null}
 
@@ -198,7 +193,7 @@ export default function BestiaryPanel({
         {/* Novice content */}
         <section className="mb-6">
           <SectionHeader label="Mythic Origin" accent={regionAccent} />
-          <p className="text-sm leading-relaxed text-ink">{creature.mythicOrigin}</p>
+          <p className="drop-cap text-sm leading-relaxed text-ink">{creature.mythicOrigin}</p>
         </section>
 
         <section className="mb-6">
