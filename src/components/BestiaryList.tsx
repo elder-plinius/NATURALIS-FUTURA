@@ -22,8 +22,10 @@ export default function BestiaryList({ onSelectCreature }: BestiaryListProps) {
       <p className="text-sm text-ink-light mb-8">
         {discoveredSet.size} of {allCreatures.length} threat archetypes recorded across{" "}
         {regions.length} regions. Every danger that advanced AI could pose has
-        already appeared in nature, myth, or story &mdash; walk the map to record
-        the rest.
+        already appeared in nature, myth, or story
+        {discoveredSet.size >= allCreatures.length
+          ? " — and every page of this folio is filled."
+          : " — walk the map to record the rest."}
       </p>
 
       {regions.map((region) => {
