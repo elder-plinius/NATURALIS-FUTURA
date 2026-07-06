@@ -20,11 +20,12 @@ const sourceIcons: Record<SignalSource, string> = {
   community: "🌐",
 };
 
-const verificationColors: Record<SignalVerification, string> = {
-  unverified: "bg-gray-100 text-gray-600",
-  plausible: "bg-blue-50 text-blue-700",
-  corroborated: "bg-amber-50 text-amber-700",
-  confirmed: "bg-green-50 text-green-800",
+// Iron-gall pigments — one ink per verification tier, matching StatusSeal.
+const verificationInks: Record<SignalVerification, string> = {
+  unverified: "#57534e",
+  plausible: "#334e68",
+  corroborated: "#92400e",
+  confirmed: "#14532d",
 };
 
 const strengthBars = (strength: number) => {
@@ -150,7 +151,13 @@ export default function SignalFeed({ signals, onSelectCreature }: SignalFeedProp
                         })}
                       </span>
                       <span
-                        className={`text-xs px-1.5 py-0.5 rounded-full ${verificationColors[signal.verification]}`}
+                        className="text-[10px] px-2 py-0.5 rounded-full font-bold tracking-[0.12em] uppercase"
+                        style={{
+                          color: verificationInks[signal.verification],
+                          border: `1px solid ${verificationInks[signal.verification]}59`,
+                          backgroundColor: `${verificationInks[signal.verification]}0a`,
+                          fontFamily: "var(--font-display)",
+                        }}
                       >
                         {signal.verification}
                       </span>
