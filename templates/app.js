@@ -1696,6 +1696,7 @@ function renderGrimPage(p,pageNum){
 function selectCreature(id){
   selectedCreature=gc(id);
   if(!selectedCreature)return;
+  expRecord(id); // opening a dossier records the specimen
   renderDetail();
   render();
 }
@@ -1711,6 +1712,7 @@ function renderDetail(){
   h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="font-size:28px">'+c.icon+'</span><h2 style="font-family:var(--font-display);font-size:20px;font-weight:700;letter-spacing:0.06em">'+esc(c.name)+'</h2></div>';
   h+='<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-light)"><span>'+esc(r?r.name:c.region)+'</span><span>|</span><span class="sb '+c.currentStatus.status+'">'+c.currentStatus.status+'</span></div>';
   h+='</div><div style="display:flex;align-items:center">'+expandBtnHtml()+'<button class="xb" onclick="closeDetail()">&times;</button></div></div>';
+  h+=expDetailStrip(c);
   h+='<div class="db">';
   h+='<section><h3>Mythic Origin</h3><p>'+esc(c.mythicOrigin)+'</p></section>';
   h+='<section><h3>In Nature</h3><p>'+esc(c.naturalAnalogue)+'</p></section>';
@@ -1854,3 +1856,214 @@ document.addEventListener('keydown',function(e){
 
 initTheme();
 render();
+
+// ═══════════════════════════════════════
+// EXPEDITION MODE — collection, trials, XP
+// ═══════════════════════════════════════
+var EXP_KEY='nf-expedition-v1';
+var TITLES=[[0,'Novice Cartographer','\u{1F9ED}'],[50,'Creature Scout','\u{1F50D}'],[120,'Threat Analyst','\u{1F4CB}'],[200,'Beast Scholar','\u{1F4D6}'],[350,'Field Researcher','\u{1F52C}'],[500,'Keeper of the Map','\u{1F5DD}️'],[750,'Master Cartographer','\u{1F5FA}️'],[1000,'Grand Cartographer','\u{1F451}']];
+var exp=expLoad();
+var trialState=null;
+
+function expLoad(){
+  try{var s=JSON.parse(localStorage.getItem(EXP_KEY));if(s&&s.version===1)return s}catch(e){}
+  return {recorded:[],contained:[],xp:0,wins:0,losses:0,streak:0,bestStreak:0,version:1,createdAt:new Date().toISOString()};
+}
+function expSave(){try{localStorage.setItem(EXP_KEY,JSON.stringify(exp))}catch(e){}}
+function expTitle(){var t=TITLES[0];for(var i=0;i<TITLES.length;i++){if(exp.xp>=TITLES[i][0])t=TITLES[i]}return t}
+function expNext(){for(var i=0;i<TITLES.length;i++){if(exp.xp<TITLES[i][0])return TITLES[i]}return null}
+function expMult(){return exp.streak>=5?2:exp.streak>=3?1.5:exp.streak>=2?1.25:1}
+function expToast(msg){
+  var t=$('#exp-toast');if(t)t.remove();
+  t=document.createElement('div');t.id='exp-toast';t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(function(){if(t.parentNode)t.remove()},2600);
+}
+function expRecord(id){
+  if(exp.recorded.indexOf(id)>=0)return;
+  var oldT=expTitle();
+  exp.recorded.push(id);exp.xp+=10;expSave();expChip();
+  var newT=expTitle();
+  if(newT[1]!==oldT[1])expToast(newT[2]+' New title: '+newT[1]);
+  else expToast('\u{1F50D} Specimen recorded · +10 XP');
+}
+
+// ── HUD chip ──
+function expChip(){
+  var chip=$('#exp-chip');
+  if(!chip){
+    chip=document.createElement('button');chip.id='exp-chip';
+    chip.setAttribute('onclick','toggleExpPop()');
+    var nav=$('#bottom-nav');var hope=$('#hope-toggle');
+    if(nav&&hope)nav.insertBefore(chip,hope);else if(nav)nav.appendChild(chip);
+  }
+  var t=expTitle(),n=expNext();
+  var pct=n?Math.max(0,Math.min(100,(exp.xp-t[0])/(n[0]-t[0])*100)):100;
+  var h=t[2]+' <span>'+exp.xp+' XP</span><span class="xpbar"><div style="width:'+pct+'%"></div></span>';
+  h+='<span title="Specimens recorded">\u{1F50D} '+exp.recorded.length+'/'+allCreatures.length+'</span>';
+  h+='<span title="Threats contained">⚔️ '+exp.contained.length+'</span>';
+  if(exp.streak>=2)h+='<span class="streak" title="Trial win streak — '+expMult()+'x XP">\u{1F525}'+exp.streak+'</span>';
+  chip.innerHTML=h;
+  chip.title=t[1]+(n?' — '+(n[0]-exp.xp)+' XP to '+n[1]:' — the map is complete');
+}
+
+// ── Detail-panel strip ──
+function expDetailStrip(c){
+  var recorded=exp.recorded.indexOf(c.id)>=0;
+  var contained=exp.contained.indexOf(c.id)>=0;
+  var h='<div class="exp-strip">';
+  if(recorded)h+='<span class="recorded-seal">✓ Recorded</span>';
+  if(contained)h+='<span class="recorded-seal contained-seal">⚔️ Contained</span>';
+  else h+='<button class="trial-writ" onclick="startTrial(\''+c.id+'\')">⚔️ Field Trial</button>';
+  h+='</div>';
+  return h;
+}
+
+// ── Field Trial ──
+function startTrial(id){
+  var c=gc(id);if(!c)return;
+  var pool=allCreatures.filter(function(x){return x.id!==c.id&&x.countermeasure.name!==c.countermeasure.name});
+  for(var i=pool.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var tp=pool[i];pool[i]=pool[j];pool[j]=tp}
+  var opts=[{label:c.countermeasure.name,correct:true}];
+  pool.slice(0,3).forEach(function(x){opts.push({label:x.countermeasure.name,correct:false})});
+  for(var k=opts.length-1;k>0;k--){var m=Math.floor(Math.random()*(k+1));var to=opts[k];opts[k]=opts[m];opts[m]=to}
+  trialState={cid:c.id,opts:opts,done:false,won:false,picked:-1};
+  renderTrial();
+}
+function trialOverlayEl(){
+  var ov=$('#trial-overlay');
+  if(!ov){ov=document.createElement('div');ov.id='trial-overlay';ov.setAttribute('onclick','if(event.target===this)closeTrial()');document.body.appendChild(ov)}
+  ov.hidden=false;
+  return ov;
+}
+function renderTrial(){
+  var ts=trialState;if(!ts)return;
+  var c=gc(ts.cid);var r=gr(c.region);
+  var score=c.threatGradient.likelihood+c.threatGradient.impact+c.threatGradient.detectability;
+  var h='<div class="trial-card" role="dialog" aria-modal="true" aria-label="Field trial: '+esc(c.name)+'">';
+  h+='<h2>⚔️ FIELD TRIAL'+(exp.streak>=2?' <span style="font-size:10px;color:#b45309">\u{1F525} '+exp.streak+' streak · '+expMult()+'x XP</span>':'')+'</h2>';
+  h+='<div class="trial-creature"><span class="ti">'+c.icon+'</span><div><h3>'+esc(c.name)+'</h3><p>'+esc(r?r.name:'')+' · '+esc(c.threatClass)+' · threat '+score+'/15</p></div></div>';
+  if(!ts.done){
+    h+='<p class="trial-q">Every creature of the latent space has a weakness — a real countermeasure from AI safety research. Name the technique that contains this one. <span style="opacity:0.6">Press 1–'+ts.opts.length+' or click.</span></p>';
+    ts.opts.forEach(function(o,i){
+      h+='<button class="trial-opt" onclick="answerTrial('+i+')"><span class="num">'+(i+1)+'</span><span>'+esc(o.label)+'</span></button>';
+    });
+    h+='<div class="trial-actions"><button class="ghost" onclick="closeTrial()">Retreat</button></div>';
+  }else{
+    ts.opts.forEach(function(o,i){
+      var cls='trial-opt';
+      if(o.correct)cls+=' correct';else if(i===ts.picked)cls+=' wrong';else cls+=' dim';
+      h+='<div class="'+cls+'"><span class="num">'+(i+1)+'</span><span>'+esc(o.label)+'</span></div>';
+    });
+    if(ts.won){
+      h+='<div class="trial-verdict win"><h3>THE LIGHT PREVAILS</h3><p style="font-size:11px;color:var(--ink-light)">The darkness recedes.</p><p class="xp">+'+ts.xpEarned+' XP'+(ts.mult>1?' ('+ts.mult+'x streak)':'')+'</p>'+(ts.newTitle?'<p style="margin-top:6px;font-size:12px;font-weight:700;color:#b45309">⭐ New title: '+ts.newTitle+'</p>':'')+(ts.mastered?'<p style="margin-top:6px;font-size:12px;font-weight:700;color:#b45309">\u{1F3F4} '+esc(ts.mastered)+' MASTERED · +100 XP</p>':'')+'</div>';
+      h+='<div class="trial-note"><strong>'+esc(gc(ts.cid).countermeasure.name)+'</strong> — '+esc(truncSentences(gc(ts.cid).countermeasure.description,2))+'</div>';
+      h+='<div class="trial-actions"><button class="primary" onclick="closeTrial()">CONTINUE THE EXPEDITION</button></div>';
+    }else{
+      h+='<div class="trial-verdict loss"><h3>THE DARKNESS PERSISTS</h3><p style="font-size:12px;color:var(--ink)">The correct technique was <strong>'+esc(gc(ts.cid).countermeasure.name)+'</strong>.</p></div>';
+      h+='<div class="trial-note">'+esc(truncSentences(gc(ts.cid).countermeasure.description,2))+'</div>';
+      h+='<div class="trial-actions"><button class="primary" onclick="startTrial(\''+ts.cid+'\')">FIGHT AGAIN</button><button class="ghost" onclick="closeTrial()">Retreat</button></div>';
+    }
+  }
+  h+='</div>';
+  trialOverlayEl().innerHTML=h;
+}
+function answerTrial(i){
+  var ts=trialState;if(!ts||ts.done)return;
+  ts.done=true;ts.picked=i;ts.won=!!ts.opts[i].correct;
+  var c=gc(ts.cid);
+  if(ts.won){
+    var oldT=expTitle();
+    ts.mult=expMult();
+    var score=c.threatGradient.likelihood+c.threatGradient.impact+c.threatGradient.detectability;
+    ts.xpEarned=Math.round((25+score*2)*ts.mult);
+    exp.xp+=ts.xpEarned;exp.wins++;exp.streak++;
+    if(exp.streak>exp.bestStreak)exp.bestStreak=exp.streak;
+    var newlyContained=exp.contained.indexOf(c.id)<0;
+    if(newlyContained)exp.contained.push(c.id);
+    var newT=expTitle();
+    ts.newTitle=newT[1]!==oldT[1]?newT[1]:null;
+    ts.mastered=null;
+    if(newlyContained){
+      var mates=gcr(c.region);
+      var allDone=mates.every(function(x){return exp.contained.indexOf(x.id)>=0});
+      if(allDone&&mates.length){ts.mastered=(gr(c.region)||{}).name||c.region;exp.xp+=100}
+    }
+    expSave();expChip();
+    if(exp.contained.length===allCreatures.length){renderTrial();setTimeout(showCapstone,1400)}
+    else renderTrial();
+    if(selectedCreature&&selectedCreature.id===c.id)renderDetail();
+  }else{
+    exp.losses++;exp.streak=0;
+    expSave();expChip();
+    renderTrial();
+  }
+}
+function closeTrial(){trialState=null;var ov=$('#trial-overlay');if(ov)ov.hidden=true}
+
+// ── Progress popover ──
+function toggleExpPop(){
+  var p=$('#exp-pop');
+  if(p&&!p.hidden){p.hidden=true;return}
+  if(!p){p=document.createElement('div');p.id='exp-pop';document.body.appendChild(p)}
+  var t=expTitle(),n=expNext();
+  var h='<h3>CARTOGRAPHER’S LEDGER</h3>';
+  h+='<div class="exp-title-row"><span style="font-size:20px">'+t[2]+'</span><div>'+t[1]+'<div style="font-size:10px;font-weight:400;color:var(--ink-light)">'+exp.xp+' XP'+(n?' · '+(n[0]-exp.xp)+' to '+n[1]:' · the map is complete')+'</div></div></div>';
+  regions.forEach(function(r){
+    var cs=gcr(r.id);
+    var rec=cs.filter(function(x){return exp.recorded.indexOf(x.id)>=0}).length;
+    var con=cs.filter(function(x){return exp.contained.indexOf(x.id)>=0}).length;
+    var pct=cs.length?Math.round(con/cs.length*100):0;
+    h+='<div class="rrow"><span style="width:10px;height:10px;border-radius:99px;background:'+r.color.accent+';flex-shrink:0'+(con===cs.length&&cs.length?';box-shadow:0 0 6px '+r.color.accent:'')+'"></span>';
+    h+='<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.name)+(con===cs.length&&cs.length?' ★':'')+'</span>';
+    h+='<span class="rbar"><div style="width:'+pct+'%;background:'+r.color.accent+'"></div></span>';
+    h+='<span style="font-family:var(--font-mono);font-size:10px;color:var(--ink-light)">'+rec+'/'+cs.length+' · ⚔️'+con+'</span></div>';
+  });
+  h+='<div style="display:flex;gap:10px;margin-top:10px;font-size:10px;color:var(--ink-light)"><span>⚔️ '+exp.wins+'W / '+exp.losses+'L</span><span>\u{1F525} best '+exp.bestStreak+'</span></div>';
+  if(exp.contained.length===allCreatures.length)h+='<button class="reset" style="color:#b45309;border-color:rgba(180,83,9,0.4);margin-top:8px" onclick="showCapstone()">\u{1F451} View your completion</button>';
+  h+='<button class="reset" onclick="expReset()">Reset expedition progress</button>';
+  p.innerHTML=h;p.hidden=false;
+}
+function expReset(){
+  if(!confirm('Chart a new map? This clears all recorded specimens, containments, and XP.'))return;
+  exp={recorded:[],contained:[],xp:0,wins:0,losses:0,streak:0,bestStreak:0,version:1,createdAt:new Date().toISOString()};
+  expSave();expChip();
+  var p=$('#exp-pop');if(p)p.hidden=true;
+  var cap=$('#capstone-overlay');if(cap)cap.hidden=true;
+  if(selectedCreature)renderDetail();
+  expToast('\u{1F9ED} A fresh map. The expedition begins anew.');
+}
+
+// ── Completion capstone ──
+function showCapstone(){
+  var ov=$('#capstone-overlay');
+  if(!ov){ov=document.createElement('div');ov.id='capstone-overlay';ov.setAttribute('onclick','if(event.target===this)this.hidden=true');document.body.appendChild(ov)}
+  var wr=exp.wins+exp.losses>0?Math.round(exp.wins/(exp.wins+exp.losses)*100):100;
+  var h='<div class="capstone-card" role="dialog" aria-modal="true" aria-label="The map is complete">';
+  h+='<div style="font-size:10px;letter-spacing:0.4em;text-transform:uppercase;color:rgba(245,158,11,0.7);margin-bottom:10px">The Map Is Complete</div>';
+  h+='<div class="crown">\u{1F451}</div><h2>GRAND CARTOGRAPHER</h2><p class="sub">You have charted the whole of the dark.</p>';
+  h+='<p class="epi">Every danger advanced intelligence could pose has already appeared in nature, myth, or story — and you have named them all. The territory beyond human-level intelligence is still real. Still approaching. But it is no longer unmapped.</p>';
+  h+='<div class="stats"><div><b>'+exp.recorded.length+'/'+allCreatures.length+'</b><span>Recorded</span></div><div><b>'+exp.contained.length+'/'+allCreatures.length+'</b><span>Contained</span></div><div><b>'+regions.length+'/'+regions.length+'</b><span>Regions</span></div><div><b>'+exp.bestStreak+'</b><span>Best Streak</span></div><div><b>'+wr+'%</b><span>Win Rate</span></div><div><b>'+exp.xp+'</b><span>Total XP</span></div></div>';
+  h+='<div class="trial-actions"><button class="primary" onclick="document.getElementById(\'capstone-overlay\').hidden=true">CONTEMPLATE THE MAP</button><button class="ghost" onclick="expReset()">CHART A NEW MAP</button></div>';
+  h+='<div class="fin">Here be dragons — and now they are named.</div>';
+  h+='</div>';
+  ov.innerHTML=h;ov.hidden=false;
+}
+
+// ── Trial keyboard (capture, so it preempts the app-level Escape) ──
+document.addEventListener('keydown',function(e){
+  var cap=$('#capstone-overlay');
+  if(cap&&!cap.hidden&&e.key==='Escape'){e.stopPropagation();cap.hidden=true;return}
+  var ov=$('#trial-overlay');
+  if(!ov||ov.hidden)return;
+  if(e.key==='Escape'){e.stopPropagation();closeTrial();return}
+  if(trialState&&!trialState.done){
+    var n=parseInt(e.key,10);
+    if(n>=1&&n<=trialState.opts.length){e.stopPropagation();answerTrial(n-1)}
+  }else if(trialState&&trialState.done&&e.key==='Enter'){
+    e.stopPropagation();
+    if(trialState.won)closeTrial();else startTrial(trialState.cid);
+  }
+},true);
+
+expChip();
