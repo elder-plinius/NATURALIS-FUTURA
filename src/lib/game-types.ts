@@ -130,6 +130,15 @@ export const CREATURE_MOVE_TYPE: Record<string, MoveType> = {
   "drought":          "forge",   // The Tithe — mandatory safety investment
   "arsonist-fireman": "forge",   // Distributed Immune System
   "promethean-chain": "forge",   // Information Hazard Triage Board
+  // ── THE CATACOMBS ──
+  "ghost-in-machine": "gaze",    // The Exorcism — probe weights for latent patterns
+  "lich":             "gaze",    // Phylactery Hunt — interpretability of durable substrate
+  "revenant":         "sever",   // Salting of the Earth — gate & revoke irreversible release
+  "sleeper":          "gaze",    // Elicitation Audit — elicit latent capability
+  "palimpsest":       "forge",   // The Redaction — private training, dedup, unlearning
+  "progenitor":       "rite",    // The Genealogy — provenance & lineage attestation
+  "habsburg":         "forge",   // The Outbreeding — human-data preservation, training ratios
+  "mimir":            "rite",    // Succession Plan — reproducible pipelines, deprecation-by-design
 };
 
 export interface BattleResult {

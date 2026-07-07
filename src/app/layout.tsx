@@ -1,10 +1,39 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { Crimson_Pro, Source_Serif_4, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+
+const crimsonPro = Crimson_Pro({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  variable: "--font-crimson",
+  display: "swap",
+});
+
+const sourceSerif = Source_Serif_4({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  axes: ["opsz"],
+  variable: "--font-sserif",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jbmono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "NATURALIS FUTURA — A Bestiary of AI Risk",
   description:
     "An interactive cartographic bestiary mapping AI threats through myth, nature, and science fiction. Every danger that advanced AI systems could pose to humanity has already appeared, in some form, in nature, myth, or story.",
+};
+
+export const viewport: Viewport = {
+  // Matches the intro screen and dungeon map — the app's default surfaces.
+  themeColor: "#0e0c0a",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -13,19 +42,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,500&family=JetBrains+Mono:wght@400;500;600&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html
+      lang="en"
+      className={`${crimsonPro.variable} ${sourceSerif.variable} ${jetbrainsMono.variable}`}
+    >
       <body className="antialiased">{children}</body>
     </html>
   );

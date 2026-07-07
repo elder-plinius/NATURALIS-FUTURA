@@ -7,6 +7,7 @@ import { mirrorDarkCreatures } from "./creatures-mirror-dark";
 import { spawningCreatures } from "./creatures-spawning";
 import { colosseumCreatures } from "./creatures-colosseum";
 import { throneCreatures } from "./creatures-throne";
+import { catacombsCreatures } from "./creatures-catacombs";
 import { compoundThreats } from "./compounds";
 import { hopeCreatures } from "./hope";
 
@@ -18,6 +19,7 @@ export const allCreatures: Creature[] = [
   ...spawningCreatures,
   ...colosseumCreatures,
   ...throneCreatures,
+  ...catacombsCreatures,
 ];
 
 export function getCreatureById(id: string): Creature | undefined {

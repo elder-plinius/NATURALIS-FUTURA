@@ -12,6 +12,7 @@ import {
 import ThreatRadar from "./ThreatRadar";
 import SignalFeed from "./SignalFeed";
 import SubmissionPortal from "./SubmissionPortal";
+import StatusSeal from "./StatusSeal";
 
 interface ThreatDashboardProps {
   onSelectCreature: (creature: Creature) => void;
@@ -482,15 +483,5 @@ function StatCard({
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const colors =
-    status === "confirmed"
-      ? "bg-red-100 text-red-800"
-      : status === "emerging"
-        ? "bg-amber-100 text-amber-800"
-        : "bg-gray-100 text-gray-600";
-  return (
-    <span className={`text-xs px-1.5 py-0.5 rounded-full ${colors}`}>
-      {status}
-    </span>
-  );
+  return <StatusSeal status={status} />;
 }

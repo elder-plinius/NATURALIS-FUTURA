@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Creature } from "@/data";
 import { regions } from "@/data";
 
@@ -11,23 +11,55 @@ interface DiscoveryAnimationProps {
 
 export default function DiscoveryAnimation({ creature, onComplete }: DiscoveryAnimationProps) {
   const [phase, setPhase] = useState<"burst" | "info" | "done">("burst");
+  const completed = useRef(false);
 
   const region = regions.find((r) => r.id === creature.region);
   const accent = region?.color.accent ?? "#f59e0b";
 
+  const finish = useCallback(() => {
+    if (completed.current) return;
+    completed.current = true;
+    onComplete();
+  }, [onComplete]);
+
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase("info"), 600);
-    const t2 = setTimeout(() => setPhase("done"), 2400);
-    const t3 = setTimeout(onComplete, 2600);
+    // Under prefers-reduced-motion the choreography is skipped: show the
+    // final frame briefly instead of a frozen mid-animation state.
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const t1 = setTimeout(() => setPhase("info"), reduced ? 0 : 600);
+    const t2 = setTimeout(() => setPhase("done"), reduced ? 900 : 2400);
+    const t3 = setTimeout(finish, reduced ? 1000 : 2600);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
     };
-  }, [onComplete]);
+  }, [finish]);
+
+  // Skippable: click anywhere or press any key to jump to the dossier.
+  // e.repeat is ignored — the encounter fires while a movement key is held,
+  // and its OS auto-repeat must not skip the reveal the player just earned.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return; // leave browser shortcuts alone
+      e.preventDefault();
+      e.stopPropagation(); // a skip key must not also fire page shortcuts like "/"
+      finish();
+    };
+    window.addEventListener("keydown", onKey, { capture: true });
+    return () => window.removeEventListener("keydown", onKey, { capture: true });
+  }, [finish]);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none">
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center cursor-pointer"
+      onClick={finish}
+      role="status"
+      aria-label={`Discovered ${creature.name}`}
+    >
       {/* Backdrop flash with region color */}
       <div
         className="absolute inset-0 animate-[discovery-flash_1s_ease-out_forwards]"
@@ -37,7 +69,7 @@ export default function DiscoveryAnimation({ creature, onComplete }: DiscoveryAn
       />
 
       {/* Center content */}
-      <div className="relative flex flex-col items-center">
+      <div className="relative flex flex-col items-center pointer-events-none">
         {/* Outer particle ring */}
         <div className="absolute w-64 h-64">
           {[...Array(16)].map((_, i) => (
@@ -99,11 +131,17 @@ export default function DiscoveryAnimation({ creature, onComplete }: DiscoveryAn
           <span className="text-5xl">{creature.icon}</span>
         </div>
 
-        {/* Name + XP + Region */}
+        {/* Specimen label — a parchment plate, legible over the dark map */}
         {phase !== "burst" && (
-          <div className="flex flex-col items-center gap-1.5 mt-4 animate-[fade-in-up_0.4s_ease-out_forwards]">
+          <div className="parchment-card rounded-xl px-6 py-4 mt-5 flex flex-col items-center gap-1.5 animate-[fade-in-up_0.4s_ease-out_forwards] relative">
             <span
-              className="text-xl font-bold text-ink tracking-[0.15em]"
+              className="text-[9px] tracking-[0.4em] uppercase text-ink/40"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Specimen Recorded
+            </span>
+            <span
+              className="text-xl font-bold text-ink tracking-[0.15em] text-center"
               style={{ fontFamily: "var(--font-display)" }}
             >
               {creature.name}
@@ -114,9 +152,6 @@ export default function DiscoveryAnimation({ creature, onComplete }: DiscoveryAn
             >
               {region?.name}
             </span>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs text-ink-light tracking-wide">DISCOVERED</span>
-            </div>
             <span
               className="mt-1 px-3 py-1 rounded-full text-sm font-bold animate-[xp-float_1.5s_ease-out_0.5s_forwards]"
               style={{
@@ -129,6 +164,11 @@ export default function DiscoveryAnimation({ creature, onComplete }: DiscoveryAn
             </span>
           </div>
         )}
+
+        {/* Skip hint */}
+        <p className="mt-4 text-[10px] tracking-[0.25em] uppercase text-amber-200/40 animate-[fade-in_1s_ease-out_1s_both]">
+          Click to continue
+        </p>
       </div>
     </div>
   );

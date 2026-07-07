@@ -138,6 +138,58 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
     setRetryCount((c) => c + 1);
   }, []);
 
+  // Modal focus management: move focus into the dialog on open, keep Tab
+  // cycling inside it, and hand focus back to the opener on close.
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    cardRef.current?.focus();
+    return () => opener?.focus?.();
+  }, []);
+
+  const handleTrapKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key !== "Tab") return;
+    const card = cardRef.current;
+    if (!card) return;
+    const focusables = card.querySelectorAll<HTMLElement>(
+      'button, input, [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+    if (e.shiftKey && (active === first || active === card)) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && active === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }, []);
+
+  // Result-screen keys: Enter continues (or retries on a loss), R retries.
+  // Escape is handled by the app shell.
+  useEffect(() => {
+    if (!result) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // A focused control keeps its native Enter behavior (e.g. the RETREAT
+      // button or the technique expander) — only handle unfocused shortcuts.
+      if (
+        e.target instanceof HTMLElement &&
+        e.target.closest("button, a, input, textarea, select, [role='button']")
+      ) return;
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (result.won) onClose();
+        else handleRetry();
+      } else if ((e.key === "r" || e.key === "R") && !result.won) {
+        e.preventDefault();
+        handleRetry();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [result, onClose, handleRetry]);
+
   const { likelihood, impact, detectability } = creature.threatGradient;
   const composite = likelihood + impact + detectability;
 
@@ -155,7 +207,12 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
       {/* Battle card */}
       <div
         ref={cardRef}
-        className={`parchment-card rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto relative animate-[battle-appear_0.3s_cubic-bezier(0.34,1.56,0.64,1)] ${shaking ? "animate-[screen-shake_0.4s_ease-out]" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Containment battle: ${creature.name}`}
+        tabIndex={-1}
+        onKeyDown={handleTrapKeyDown}
+        className={`parchment-card rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto relative outline-none animate-[battle-appear_0.3s_cubic-bezier(0.34,1.56,0.64,1)] ${shaking ? "animate-[screen-shake_0.4s_ease-out]" : ""}`}
       >
         {/* Region accent bar */}
         <div

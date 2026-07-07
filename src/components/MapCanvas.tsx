@@ -326,6 +326,7 @@ interface MapCanvasProps {
   onSelectCreature: (creature: Creature) => void;
   onSelectRegion: (regionId: string) => void;
   onEncounterCreature?: (creature: Creature) => void;
+  onTouchDirection?: (dir: Direction, held: boolean) => void;
   selectedCreature: Creature | null;
   selectedRegion: string | null;
   showHope: boolean;
@@ -559,6 +560,64 @@ function CompoundLines({ selectedCreature, creatures }: { selectedCreature: Crea
   );
 }
 
+// ── Touch D-pad — coarse-pointer devices only ──
+function TouchDPad({ onDirection }: { onDirection: (dir: Direction, held: boolean) => void }) {
+  // Each pointer holds its own direction, so a second thumb neither clobbers
+  // the first nor halts movement when lifted — and two thumbs make diagonals.
+  const pointerDirs = useRef<Map<number, Direction>>(new Map());
+  const lastPointerAt = useRef(0);
+
+  const pad = (dir: Direction, label: string, area: string) => (
+    <button
+      aria-label={`Move ${dir}`}
+      className="w-12 h-12 rounded-lg flex items-center justify-center bg-black/45 border border-amber-200/20 text-amber-200/70 text-lg select-none active:bg-amber-500/25 active:border-amber-400/40 transition-colors"
+      style={{ gridArea: area, touchAction: "none" }}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        lastPointerAt.current = Date.now();
+        pointerDirs.current.set(e.pointerId, dir);
+        onDirection(dir, true);
+      }}
+      onPointerUp={(e) => releasePointer(e.pointerId)}
+      onPointerLeave={(e) => releasePointer(e.pointerId)}
+      onPointerCancel={(e) => releasePointer(e.pointerId)}
+      onContextMenu={(e) => e.preventDefault()}
+      onClick={() => {
+        // Assistive-tech activation (VoiceOver/switch access sends a bare
+        // click): nudge one step. Skip clicks that follow a real pointer tap.
+        if (Date.now() - lastPointerAt.current < 500) return;
+        onDirection(dir, true);
+        setTimeout(() => onDirection(dir, false), 250);
+      }}
+    >
+      {label}
+    </button>
+  );
+
+  function releasePointer(pointerId: number) {
+    lastPointerAt.current = Date.now();
+    const dir = pointerDirs.current.get(pointerId);
+    if (dir === undefined) return;
+    pointerDirs.current.delete(pointerId);
+    // Only release the direction if no other pointer still holds it.
+    if (![...pointerDirs.current.values()].includes(dir)) {
+      onDirection(dir, false);
+    }
+  }
+
+  return (
+    <div
+      className="absolute bottom-4 left-4 z-30 hidden pointer-coarse:grid gap-1"
+      style={{ gridTemplateAreas: `". up ." "left down right"` }}
+    >
+      {pad("up", "▲", "up")}
+      {pad("left", "◀", "left")}
+      {pad("down", "▼", "down")}
+      {pad("right", "▶", "right")}
+    </div>
+  );
+}
+
 // ── Obstacle Renderer ──
 function ObstacleNode({ obstacle }: { obstacle: Obstacle }) {
   const s = OBS_STYLES[obstacle.type];
@@ -591,7 +650,7 @@ function ObstacleNode({ obstacle }: { obstacle: Obstacle }) {
 // ── Main Map Canvas ──
 // ══════════════════════════════════════════
 export default function MapCanvas({
-  onSelectCreature, onSelectRegion, onEncounterCreature,
+  onSelectCreature, onSelectRegion, onEncounterCreature, onTouchDirection,
   selectedCreature, selectedRegion, showHope, mapRevealed,
   discoveredSet = new Set(), containedSet = new Set(),
   playerX = 0.5, playerY = 0.5,
@@ -618,7 +677,7 @@ export default function MapCanvas({
   }, []);
 
   // ── Camera: pixel-based transform to center player ──
-  const cameraTransform = useMemo(() => {
+  const camera = useMemo(() => {
     const worldW = viewport.w * WORLD_SCALE;
     const worldH = viewport.h * WORLD_SCALE;
     const playerWorldX = playerX * worldW;
@@ -633,10 +692,17 @@ export default function MapCanvas({
     camY = Math.max(viewport.h - worldH, Math.min(0, camY));
 
     return {
-      transform: `translate3d(${Math.round(camX)}px, ${Math.round(camY)}px, 0)`,
-      width: `${WORLD_SCALE * 100}%`,
-      height: `${WORLD_SCALE * 100}%`,
-      transition: playerMoving ? "transform 60ms linear" : "transform 200ms ease-out",
+      style: {
+        transform: `translate3d(${Math.round(camX)}px, ${Math.round(camY)}px, 0)`,
+        width: `${WORLD_SCALE * 100}%`,
+        height: `${WORLD_SCALE * 100}%`,
+        transition: playerMoving ? "transform 60ms linear" : "transform 200ms ease-out",
+      },
+      // Where the player actually sits on screen — the camera clamps at
+      // world edges, so this is NOT always the viewport center. The torch
+      // gradient follows these coordinates.
+      torchX: viewport.w > 0 ? ((playerWorldX + camX) / viewport.w) * 100 : 50,
+      torchY: viewport.h > 0 ? ((playerWorldY + camY) / viewport.h) * 100 : 50,
     };
   }, [playerX, playerY, playerMoving, viewport]);
 
@@ -659,18 +725,34 @@ export default function MapCanvas({
     }
   }, [playerX, playerY, mapRevealed, discoveredSet, onEncounterCreature]);
 
-  // ── Near-player and distance map ──
-  const { nearCreatures, creatureDistances } = useMemo(() => {
+  // ── Near-player, distance map, and creature-sense compass bearing ──
+  const { nearCreatures, creatureDistances, senseAngle } = useMemo(() => {
     const near = new Set<string>();
     const dists = new Map<string, number>();
+    let nearestUndiscovered: Creature | null = null;
+    let nearestDist = Infinity;
     for (const c of allCreatures) {
       const dx = playerX - c.mapPosition.x;
       const dy = playerY - c.mapPosition.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       dists.set(c.id, dist);
-      if (!discoveredSet.has(c.id) && dist < HINT_DISTANCE) near.add(c.id);
+      if (!discoveredSet.has(c.id)) {
+        if (dist < HINT_DISTANCE) near.add(c.id);
+        if (dist < nearestDist) {
+          nearestDist = dist;
+          nearestUndiscovered = c;
+        }
+      }
     }
-    return { nearCreatures: near, creatureDistances: dists };
+    // Bearing to the nearest undiscovered creature; the needle SVG points up,
+    // so straight right = +90deg.
+    const angle = nearestUndiscovered
+      ? (Math.atan2(
+          nearestUndiscovered.mapPosition.y - playerY,
+          nearestUndiscovered.mapPosition.x - playerX,
+        ) * 180) / Math.PI + 90
+      : null;
+    return { nearCreatures: near, creatureDistances: dists, senseAngle: angle };
   }, [playerX, playerY, discoveredSet]);
 
   // ── Footprint trail — drop breadcrumbs as player moves ──
@@ -703,9 +785,9 @@ export default function MapCanvas({
   }, [playerX, playerY, mapRevealed]);
 
   return (
-    <div ref={containerRef} className="relative w-full h-full overflow-hidden bg-[#0e0c0a]">
+    <div ref={containerRef} className="dark-surface relative w-full h-full overflow-hidden bg-[#0e0c0a]">
       {/* ── WORLD CONTAINER — pixel-based camera ── */}
-      <div className="absolute top-0 left-0 will-change-transform" style={cameraTransform}>
+      <div className="absolute top-0 left-0 will-change-transform" style={camera.style}>
         {/* Dark dungeon floor */}
         <div className="absolute inset-0" style={{
           background: `
@@ -816,10 +898,11 @@ export default function MapCanvas({
       {/* ── VIEWPORT-FIXED OVERLAYS ──             */}
       {/* ══════════════════════════════════════════ */}
 
-      {/* Torchlight effect — radial gradient centered on viewport */}
+      {/* Torchlight effect — radial gradient tracking the PLAYER, not the
+          viewport center (the camera clamps at world edges) */}
       {mapRevealed && (
         <div className="absolute inset-0 pointer-events-none z-20 animate-[torch-flicker_4s_ease-in-out_infinite]" style={{
-          background: `radial-gradient(ellipse 45% 50% at 50% 50%,
+          background: `radial-gradient(ellipse 45% 50% at ${camera.torchX}% ${camera.torchY}%,
             transparent 0%,
             rgba(0,0,0,0.05) 30%,
             rgba(0,0,0,0.25) 50%,
@@ -830,10 +913,10 @@ export default function MapCanvas({
         }} />
       )}
 
-      {/* Warm vignette inner glow */}
+      {/* Warm vignette inner glow — follows the torch */}
       {mapRevealed && (
         <div className="absolute inset-0 pointer-events-none z-20" style={{
-          background: `radial-gradient(ellipse 35% 40% at 50% 50%,
+          background: `radial-gradient(ellipse 35% 40% at ${camera.torchX}% ${camera.torchY}%,
             rgba(255, 180, 80, 0.06) 0%,
             transparent 100%
           )`,
@@ -859,9 +942,12 @@ export default function MapCanvas({
         </div>
       </div>
 
-      {/* WASD hint */}
+      {/* Touch D-pad (coarse pointers only) */}
+      {mapRevealed && onTouchDirection && <TouchDPad onDirection={onTouchDirection} />}
+
+      {/* WASD hint — hidden on touch devices, where the D-pad takes its place */}
       {mapRevealed && (
-        <div className="absolute bottom-3 left-3 z-30 flex items-center gap-2 pointer-events-none select-none">
+        <div className="absolute bottom-3 left-3 z-30 flex items-center gap-2 pointer-events-none select-none pointer-coarse:hidden">
           <div className="flex flex-col items-center gap-0.5">
             <kbd className="w-6 h-5 flex items-center justify-center rounded bg-black/40 text-amber-200/50 text-[9px] font-mono font-bold border border-amber-200/15">W</kbd>
             <div className="flex gap-0.5">
@@ -876,10 +962,12 @@ export default function MapCanvas({
 
       {/* Proximity warning — something stirs nearby */}
       {mapRevealed && nearCreatures.size > 0 && (
-        <div className="absolute pointer-events-none" style={{
+        <div className="absolute pointer-events-none motion-static" style={{
           left: "50%",
           top: "38%",
           zIndex: 25,
+          transform: "translateX(-50%)",
+          opacity: 0.65,
           animation: "stir-float 3s ease-in-out infinite",
         }}>
           <p className="text-sm text-amber-300/50 italic whitespace-nowrap tracking-wider"
@@ -891,8 +979,9 @@ export default function MapCanvas({
 
       {/* Region entry banner */}
       {regionBanner && (
-        <div className="absolute pointer-events-none z-30" style={{
+        <div className="absolute pointer-events-none z-30 motion-static" style={{
           left: "50%", top: "25%",
+          transform: "translateX(-50%)",
           animation: "region-enter 3s ease-out forwards",
         }}>
           <div className="text-center">
@@ -921,9 +1010,14 @@ export default function MapCanvas({
         </div>
       )}
 
-      {/* Minimap */}
+      {/* Minimap — the cartographer's field vellum */}
       {mapRevealed && (
-        <div className="absolute top-3 right-3 z-30 w-28 h-24 rounded-lg border border-amber-200/15 bg-black/60 backdrop-blur-sm overflow-hidden pointer-events-none shadow-lg">
+        <div className="absolute top-3 right-3 z-30 w-28 h-24 rounded-sm overflow-hidden pointer-events-none shadow-lg"
+          style={{
+            border: "1px solid rgba(180,160,120,0.4)",
+            background: "linear-gradient(160deg, rgba(38,30,18,0.88), rgba(22,17,10,0.92))",
+            boxShadow: "inset 0 0 0 2px rgba(180,160,120,0.12), inset 0 0 18px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.4)",
+          }}>
           {/* Player dot */}
           <div className="absolute w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(255,180,80,0.8)]"
             style={{ left: `${playerX * 100}%`, top: `${playerY * 100}%`, transform: "translate(-50%, -50%)" }} />
@@ -955,15 +1049,42 @@ export default function MapCanvas({
               backgroundColor: "rgba(180,160,120,0.3)",
             }} />
           ))}
+          {/* Folded corner */}
+          <div className="absolute bottom-0 right-0 w-0 h-0" style={{
+            borderLeft: "10px solid transparent",
+            borderBottom: "10px solid rgba(180,160,120,0.22)",
+          }} />
         </div>
       )}
 
-      {/* Compass */}
-      <div className="absolute bottom-3 right-3 z-30 opacity-30 pointer-events-none">
-        <svg width="40" height="40" viewBox="0 0 40 40">
-          <circle cx="20" cy="20" r="18" stroke="#b4a078" strokeWidth="0.5" fill="none" />
-          <polygon points="20,4 18,12 22,12" fill="#b4a078" opacity="0.8" />
-          <text x="20" y="11" textAnchor="middle" fontSize="5" fill="#b4a078" fontFamily="serif">N</text>
+      {/* Creature-sense compass — the needle points toward the nearest
+          undiscovered creature; falls back to north when the map is complete */}
+      <div
+        className={`absolute bottom-3 right-3 z-30 pointer-events-none transition-opacity duration-500 ${mapRevealed && senseAngle !== null ? "opacity-70" : "opacity-30"}`}
+        title="The needle senses the nearest undiscovered creature"
+      >
+        <svg width="44" height="44" viewBox="0 0 40 40">
+          <circle cx="20" cy="20" r="18" stroke="#b4a078" strokeWidth="0.75" fill="rgba(20,16,10,0.55)" />
+          <circle cx="20" cy="20" r="14.5" stroke="#b4a078" strokeWidth="0.35" fill="none" opacity="0.5" />
+          {/* Cardinal ticks */}
+          {[0, 90, 180, 270].map((a) => (
+            <line key={a} x1="20" y1="3.5" x2="20" y2="6"
+              stroke="#b4a078" strokeWidth="0.6" opacity="0.7"
+              transform={`rotate(${a}, 20, 20)`} />
+          ))}
+          <text x="20" y="10.5" textAnchor="middle" fontSize="4.5" fill="#b4a078" fontFamily="serif" opacity="0.8">N</text>
+          {/* Needle */}
+          <g style={{
+            transform: `rotate(${senseAngle ?? 0}deg)`,
+            transformOrigin: "50% 50%",
+            transition: "transform 0.6s cubic-bezier(0.34, 1.2, 0.64, 1)",
+          }}>
+            <polygon points="20,6.5 17.8,20 22.2,20"
+              fill={senseAngle !== null ? "#f59e0b" : "#b4a078"}
+              opacity="0.9" />
+            <polygon points="20,33.5 17.8,20 22.2,20" fill="#b4a078" opacity="0.35" />
+            <circle cx="20" cy="20" r="1.6" fill="#b4a078" />
+          </g>
         </svg>
       </div>
     </div>

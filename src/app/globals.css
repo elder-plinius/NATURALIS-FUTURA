@@ -26,9 +26,9 @@
   --color-parchment-dark: #e8dcc8;
   --color-ink: #2c1810;
   --color-ink-light: #44322a;
-  --font-display: "Crimson Pro", "Palatino Linotype", "Book Antiqua", Palatino, serif;
-  --font-body: "Source Serif 4", "Georgia", "Times New Roman", serif;
-  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  --font-display: var(--font-crimson), "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --font-body: var(--font-sserif), "Georgia", "Times New Roman", serif;
+  --font-mono: var(--font-jbmono), "Fira Code", "Cascadia Code", monospace;
 }
 
 @layer base {
@@ -38,14 +38,55 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
     font-family: var(--font-body);
     font-optical-sizing: auto;
     background-color: var(--color-parchment);
+    /* Laid-paper grain — inline SVG fractal noise, no external asset */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.17 0 0 0 0 0.09 0 0 0 0 0.06 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23g)'/%3E%3C/svg%3E");
     color: var(--color-ink);
     line-height: 1.6;
+  }
+
+  /* Torch-gold focus ring — reads as gilt on parchment, torchlight on the map */
+  :focus-visible {
+    outline: 2px solid var(--color-siren-accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Inverted-letterpress text selection */
+  ::selection {
+    background: var(--color-ink);
+    color: var(--color-parchment);
+  }
+  .dark-surface ::selection {
+    background: rgba(245, 158, 11, 0.35);
+    color: inherit;
+  }
+
+  /* Quill-and-ink scrollbars — transparent track so they sit on any surface */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(107, 78, 42, 0.35) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: rgba(107, 78, 42, 0.3);
+    border-radius: 4px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: rgba(107, 78, 42, 0.5);
   }
 }
 
@@ -121,16 +162,32 @@
   /* ── Card System ── */
 
   .parchment-card {
-    background: linear-gradient(
-      145deg,
-      var(--color-parchment),
-      var(--color-parchment-dark)
-    );
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.17 0 0 0 0 0.09 0 0 0 0 0.06 0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23g)'/%3E%3C/svg%3E"),
+      linear-gradient(
+        145deg,
+        var(--color-parchment),
+        var(--color-parchment-dark)
+      );
     border: 1px solid rgba(44, 24, 16, 0.12);
+    /* Engraved-plate frame: a second hairline rule inset from the border */
     box-shadow:
+      inset 0 0 0 3px rgba(245, 240, 225, 0.9),
+      inset 0 0 0 4px rgba(44, 24, 16, 0.1),
       inset 0 1px 0 rgba(255, 255, 255, 0.5),
       0 1px 3px rgba(44, 24, 16, 0.08),
       0 4px 12px rgba(44, 24, 16, 0.06);
+  }
+
+  /* Illuminated drop cap — scoped use: the first paragraph of a dossier */
+  .drop-cap::first-letter {
+    float: left;
+    font-family: var(--font-display);
+    font-size: 3.05em;
+    line-height: 0.82;
+    padding: 0.04em 0.12em 0 0;
+    color: var(--color-throne-accent);
+    font-weight: 700;
   }
 
   .threat-gradient-bar {
@@ -626,5 +683,51 @@
   100% {
     opacity: 1;
     transform: scale(1) translateY(0);
+  }
+}
+
+/* ── Victory Capstone ── */
+
+@keyframes victory-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(26px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes victory-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.45));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 26px rgba(245, 158, 11, 0.85));
+    transform: scale(1.06);
+  }
+}
+
+/* ── Accessibility: honor prefers-reduced-motion ──
+   Animations snap to their final frame. Elements whose keyframes END at
+   opacity 0 (fade-out-then-unmount patterns) carry .motion-static instead:
+   their animation is removed entirely so they render at natural opacity for
+   their JS-controlled mount window — static appear/disappear, no motion. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .motion-static {
+    animation: none !important;
   }
 }
