@@ -540,6 +540,12 @@ function renderMap(el){
     var fs=isStrip?13:Math.min(22,Math.max(14,w/26));
     h+='<path id="lbl-'+r.id+'" d="M '+(x+w*0.02).toFixed(0)+' '+ly.toFixed(0)+' Q '+(x+w*0.5).toFixed(0)+' '+(ly-(isStrip?0:14)).toFixed(0)+' '+(x+w*0.98).toFixed(0)+' '+ly.toFixed(0)+'" fill="none"/>';
     h+='<text class="terr-name" font-size="'+fs+'"><textPath href="#lbl-'+r.id+'" startOffset="50%" text-anchor="middle">'+esc(r.name)+(mastered[r.id]?' ✦':'')+'</textPath></text>';
+    if(!isStrip&&r.epigraph){
+      var ey=ly+24;
+      var epi=r.epigraph.length>92?r.epigraph.slice(0,89)+'…':r.epigraph;
+      h+='<path id="epi-'+r.id+'" d="M '+(x+w*0.04).toFixed(0)+' '+ey.toFixed(0)+' Q '+(x+w*0.5).toFixed(0)+' '+(ey-12).toFixed(0)+' '+(x+w*0.96).toFixed(0)+' '+ey.toFixed(0)+'" fill="none"/>';
+      h+='<text class="terr-epi" font-size="11.5"><textPath href="#epi-'+r.id+'" startOffset="50%" text-anchor="middle">“'+esc(epi)+'”</textPath></text>';
+    }
     h+='</g>';
   });
   h+='</svg>';
@@ -576,6 +582,12 @@ function renderMap(el){
       var counterNames=countered.map(function(c){return c.name.replace('THE ','')}).join(', ');
       h+='<div class="hn" onclick="selectHope(\''+h2.id+'\')" style="left:'+h2.mapPosition.x*100+'%;top:'+h2.mapPosition.y*100+'%;transform:translate(-50%,-50%)" title="'+esc(h2.name)+' — counters '+esc(counterNames)+'"><span class="ring"><span class="ci">'+h2.icon+'</span></span><span class="cl">'+esc(h2.name.replace('THE ',''))+'</span></div>';
     });
+  }
+  {
+    var sug=null,sugVerb='';
+    for(var si=0;si<allCreatures.length;si++){var sc=allCreatures[si];if(exp.recorded.indexOf(sc.id)>=0&&exp.contained.indexOf(sc.id)<0){sug=sc;sugVerb='Face';break}}
+    if(!sug){for(var sj=0;sj<allCreatures.length;sj++){if(exp.recorded.indexOf(allCreatures[sj].id)<0){sug=allCreatures[sj];sugVerb='Seek';break}}}
+    if(sug)h+='<button id="chart-suggest" onclick="selectCreature(\''+sug.id+'\')"><span class="sug-kicker">The Ledger Suggests</span><span class="sug-act">'+sugVerb+' '+esc(sug.name.replace('THE ','the '))+' ⟶</span></button>';
   }
   h+='<div id="chart-neatline"></div>';
   h+='<div class="chart-ornament" style="left:24px;bottom:30px;width:104px;height:104px">'+compassRoseSVG()+'</div>';
@@ -1844,6 +1856,17 @@ function renderDetail(){
     h+='<section><h3>The Danger</h3><div class="tb">'+esc(c.technicalSpec)+'</div></section>';
   }
   h+='<section><h3>Countermeasure: '+esc(c.countermeasure.name)+'</h3><p>'+esc(c.countermeasure.description)+'</p></section>';
+  var sightings=threatSignals.filter(function(sg){return (sg.relatedCreatures||[]).indexOf(c.id)>=0});
+  if(sightings.length){
+    h+='<section><h3>Sightings</h3>';
+    sightings.slice(0,4).forEach(function(sg){
+      h+='<div class="sighting"><div class="sight-head"><span class="sight-date">'+fmt(sg.date)+'</span><span class="vb '+sg.verification+'">'+sg.verification+'</span></div>';
+      h+='<div class="sight-title">'+(sg.sourceUrl?'<a href="'+esc(sg.sourceUrl)+'" target="_blank" rel="noopener">'+esc(sg.title)+'</a>':esc(sg.title))+'</div>';
+      h+='<div class="sight-src">'+esc(sg.sourceLabel||sg.source)+'</div></div>';
+    });
+    if(sightings.length>4)h+='<div class="sight-more">+'+(sightings.length-4)+' more in the Observatory</div>';
+    h+='</section>';
+  }
   if(viewMode!=='novice'){
     h+='<section><h3>Threat Gradient</h3>';
     [['Likelihood',c.threatGradient.likelihood],['Impact',c.threatGradient.impact],['Stealth',c.threatGradient.detectability]].forEach(function(p){
@@ -2185,10 +2208,32 @@ function tallySVG(n){
   return '<svg width="'+Math.max(x,6)+'" height="16" viewBox="0 0 '+Math.max(x,6)+' 16" style="vertical-align:-3px">'+svg+'</svg>';
 }
 
+
+function toggleLegend(){
+  var ov=$('#legend-overlay');
+  if(ov&&!ov.hidden){ov.hidden=true;return}
+  if(!ov){ov=document.createElement('div');ov.id='legend-overlay';ov.setAttribute('onclick','if(event.target===this)this.hidden=true');document.body.appendChild(ov)}
+  var h='<div class="legend-card" role="dialog" aria-modal="true" aria-label="How to read this chart">';
+  h+='<h2>LEGENDA · HOW TO READ THIS CHART</h2>';
+  function row(sw,txt){return '<div class="leg-row"><span class="leg-swatch">'+sw+'</span><span class="leg-text">'+txt+'</span></div>'}
+  h+=row('<svg viewBox="0 0 34 24" width="34" height="24"><path d="M3 12 C5 5,10 3,17 4 C26 3,31 7,31 12 C31 18,25 21,17 20 C9 21,3 19,3 12 Z" fill="var(--land)" stroke="var(--ink)" stroke-width="1.2"/></svg>','A <b>territory</b> is one class of AI threat. Its name takes a gold leaf ✦ when you master every creature within.');
+  h+=row('<span class="ring" style="width:26px;height:26px"><span style="font-size:13px;filter:grayscale(1) opacity(.72)">🐍</span></span>','A <b>sigil</b> is one creature. Grey ink means <b>unrecorded</b> — open its dossier to record it and it takes colour.');
+  h+=row('<span class="ring" style="width:26px;height:26px"><span style="font-size:13px">🐍</span><span style="position:absolute;top:-2px;right:-2px;width:9px;height:9px;border-radius:50%;background:var(--gilt);border:1.5px solid var(--parchment)"></span></span>','A <b>gilt pip</b> means <b>contained</b> — you named its true countermeasure in a field trial.');
+  h+=row('<span class="ring" style="width:26px;height:26px;border-color:var(--vermilion)"><span style="font-size:13px">👻</span></span>','A <b>vermilion ring</b> marks a threat with <b>confirmed sightings</b> in the real world.');
+  h+=row('<svg viewBox="0 0 34 24" width="34" height="24"><line x1="2" y1="12" x2="32" y2="12" stroke="var(--vermilion)" stroke-width="1.6" stroke-dasharray="6 4"/></svg>','<b>Crimson routes</b> join a selected creature to its <b>compound risks</b> — patterns that amplify one another.');
+  h+=row('<svg viewBox="0 0 34 24" width="34" height="24"><line x1="2" y1="12" x2="32" y2="12" stroke="var(--gilt)" stroke-width="1.4" stroke-dasharray="3 5"/></svg>','<b>Gold routes</b> (toggle LVMEN) show the <b>wards of hope</b> and the threats each one counters.');
+  h+=row('<span style="font-family:var(--font-display);font-size:14px;color:var(--gilt)">✦</span>','Sigils grow with <b>threat score</b>; every dossier ends in a real countermeasure. Nothing here is beyond warding.');
+  h+='<div class="trial-actions" style="margin-top:14px"><button class="primary" onclick="document.getElementById(\'legend-overlay\').hidden=true">TO THE CHART</button></div>';
+  h+='</div>';
+  ov.innerHTML=h;ov.hidden=false;
+}
+
 // ── Trial keyboard (capture, so it preempts the app-level Escape) ──
 document.addEventListener('keydown',function(e){
   var cap=$('#capstone-overlay');
   if(cap&&!cap.hidden&&e.key==='Escape'){e.stopPropagation();cap.hidden=true;return}
+  var leg=$('#legend-overlay');
+  if(leg&&!leg.hidden&&e.key==='Escape'){e.stopPropagation();leg.hidden=true;return}
   var ov=$('#trial-overlay');
   if(!ov||ov.hidden)return;
   if(e.key==='Escape'){e.stopPropagation();closeTrial();return}
