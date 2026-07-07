@@ -158,11 +158,12 @@ a{color:var(--ink)}
 /* ═══ ATLAS SHELL ═══
    z ladder: map 0 / nodes 10-30 / fog 40 / scrim 55 / folio 60 / detail 65 / rail 70 / exp-pop 80 / trial 90 / search+capstone 100 */
 #app{display:flex;flex-direction:column;height:100vh}
-#atlas-rail{position:relative;z-index:70;display:flex;align-items:center;gap:14px;height:46px;padding:0 16px;background:var(--parchment-dark);border-bottom:2px solid var(--ink);box-shadow:0 3.5px 0 -2.75px var(--ink-mid);flex-shrink:0;transition:background .4s}
+#atlas-rail{position:relative;z-index:70;display:flex;align-items:center;gap:12px;height:46px;padding:0 14px;background:var(--parchment-dark);border-bottom:2px solid var(--ink);box-shadow:0 3.5px 0 -2.75px var(--ink-mid);flex-shrink:0;transition:background .4s;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+#atlas-rail::-webkit-scrollbar{display:none}
 #rail-brand{display:flex;align-items:center;justify-content:center;width:29px;height:29px;border-radius:50%;border:1px solid var(--ink-mid);font-family:var(--font-display);font-size:11px;letter-spacing:0.08em;color:var(--ink);flex-shrink:0}
 #rail-tabs{display:flex;align-items:flex-end;gap:5px;height:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
 #rail-tabs::-webkit-scrollbar{display:none}
-.atlas-tab{position:relative;align-self:flex-end;margin-bottom:-2px;padding:6px 10px 7px;background:var(--parchment-dark);border:1px solid var(--ink-mid);border-bottom:none;clip-path:polygon(6px 0,calc(100% - 6px) 0,100% 100%,0 100%);font-family:var(--font-display);font-size:10.5px;letter-spacing:0.14em;color:var(--ink-mid);white-space:nowrap;transition:color .2s,transform .2s,background .2s;text-transform:uppercase}
+.atlas-tab{position:relative;align-self:flex-end;margin-bottom:-2px;padding:6px 9px 7px;background:var(--parchment-dark);border:1px solid var(--ink-mid);border-bottom:none;clip-path:polygon(6px 0,calc(100% - 6px) 0,100% 100%,0 100%);font-family:var(--font-display);font-size:10px;letter-spacing:0.1em;color:var(--ink-mid);white-space:nowrap;transition:color .2s,transform .2s,background .2s;text-transform:uppercase}
 .atlas-tab:hover{color:var(--ink)}
 .atlas-tab.active{background:var(--parchment);color:var(--ink);transform:translateY(2px);box-shadow:inset 0 -2px 0 var(--gilt)}
 .rail-spacer{flex:1}
@@ -199,7 +200,7 @@ a{color:var(--ink)}
 #chart-svg .terr:hover .wl2{opacity:0.3}
 #chart-svg .terr:hover .wl3{opacity:0.2}
 #chart-svg .terr-name{font-family:var(--font-display);fill:var(--ink);opacity:0.8;letter-spacing:6px;pointer-events:none;text-transform:uppercase;stroke:var(--parchment);stroke-width:4px;paint-order:stroke;stroke-linejoin:round}
-#chart-svg .terr-epi{font-family:var(--font-body);font-style:italic;fill:var(--ink-light);opacity:0;transition:opacity .3s;pointer-events:none}
+#chart-svg .terr-epi{font-family:var(--font-body);font-style:italic;fill:var(--ink-light);opacity:0;transition:opacity .3s;pointer-events:none;stroke:var(--parchment);stroke-width:3.5px;paint-order:stroke;stroke-linejoin:round}
 #chart-svg .terr:hover~.terr-epi-for,#chart-svg .terr:hover .terr-epi{opacity:0.75}
 .terr-coast{stroke:var(--ink);fill:none;stroke-width:1.4;stroke-linejoin:round;transition:stroke .4s}
 .terr-gilt .terr-coast{stroke:var(--gilt);stroke-width:2}
@@ -221,7 +222,8 @@ a{color:var(--ink)}
 .cn .pip{position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:50%;background:var(--gilt);border:1.5px solid var(--parchment);display:none}
 .cn.cont .pip{display:block}
 .cn.stat-confirmed .ring{border-color:var(--vermilion)}
-.cn .cl{font-family:var(--font-display);font-size:8.5px;white-space:nowrap;text-shadow:0 1px 2px var(--text-shadow),0 0 6px var(--text-shadow);letter-spacing:0.14em;color:var(--ink);opacity:0.85;text-transform:uppercase}
+.cn .cl{font-family:var(--font-display);font-size:8.5px;white-space:nowrap;text-shadow:0 1px 2px var(--text-shadow),0 0 6px var(--text-shadow);letter-spacing:0.14em;color:var(--ink);opacity:0.85;text-transform:uppercase;transition:opacity .25s}
+.cn:not(.rec):not(.sel):not(.conn):not(:hover) .cl{opacity:0}
 
 .hn{position:absolute;display:flex;flex-direction:column;align-items:center;gap:3px;z-index:30;animation:fade-in-up .6s ease-out forwards;cursor:pointer}
 .hn .ring{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;border:1.5px solid var(--gilt);background:radial-gradient(circle,var(--parchment) 58%,transparent 60%)}
@@ -335,7 +337,7 @@ a{color:var(--ink)}
 
 .cc{border-radius:12px;border:1px solid var(--border);padding:16px;margin-bottom:12px;background:var(--card-bg)}
 
-#search-overlay{position:fixed;inset:0;z-index:100;background:var(--overlay-bg);display:none;align-items:flex-start;justify-content:center;padding-top:15vh;backdrop-filter:blur(4px)}
+#search-overlay{position:fixed;inset:0;z-index:100;background:var(--overlay-bg);display:none;align-items:flex-start;justify-content:center;padding-top:15vh}
 #search-overlay.open{display:flex}
 #search-box{width:90%;max-width:560px;background:var(--parchment);border-radius:16px;box-shadow:var(--shadow-lg);overflow:hidden}
 #search-input{width:100%;padding:16px 20px;font-size:16px;border:none;background:transparent;outline:none;border-bottom:1px solid var(--border);color:var(--ink)}
@@ -724,10 +726,10 @@ body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
 .parchment-card{box-shadow:inset 0 0 0 3px var(--parchment),inset 0 0 0 4px var(--border),var(--shadow-sm)}
 
 /* Illuminated drop cap on the dossier's opening passage */
-.db section:first-of-type>p::first-letter{float:left;font-family:var(--font-display);font-size:3.05em;line-height:0.82;padding:0.04em 0.12em 0 0;color:#ca8a04;font-weight:700}
+.db section:first-of-type>p::first-letter{float:left;font-family:var(--font-display);font-size:3.05em;line-height:0.82;padding:0.04em 0.12em 0 0;color:var(--gilt);font-weight:700}
 
 /* Torch-gold keyboard focus */
-:focus-visible{outline:2px solid #f59e0b;outline-offset:2px;border-radius:2px}
+:focus-visible{outline:2px solid var(--gilt);outline-offset:2px;border-radius:2px}
 
 /* Inverted-letterpress selection */
 ::selection{background:var(--ink);color:var(--parchment)}
@@ -751,7 +753,7 @@ body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
 .trial-writ{flex:1;min-width:170px;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;letter-spacing:0.18em;font-family:var(--font-display);color:#92400e;border:1px solid rgba(146,64,14,0.5);box-shadow:inset 0 0 0 2.5px transparent,inset 0 0 0 3px rgba(146,64,14,0.25);transition:all .2s;text-transform:uppercase}
 .trial-writ:hover{background:#92400e;color:var(--parchment)}
 
-#trial-overlay{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--overlay-bg);backdrop-filter:blur(3px)}
+#trial-overlay{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--overlay-bg)}
 #trial-overlay[hidden]{display:none}
 .trial-card{width:100%;max-width:480px;max-height:92vh;overflow-y:auto;border-radius:14px;background:var(--parchment-card-bg);border:1px solid var(--border-strong);box-shadow:inset 0 0 0 3px var(--parchment),inset 0 0 0 4px var(--border),var(--shadow-lg);padding:22px;animation:trial-rise .3s cubic-bezier(0.34,1.56,0.64,1)}
 @keyframes trial-rise{0%{opacity:0;transform:translateY(18px) scale(0.96)}100%{opacity:1;transform:none}}
@@ -795,7 +797,7 @@ body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
 #exp-toast{position:fixed;left:50%;transform:translateX(-50%);bottom:64px;z-index:95;padding:9px 18px;border-radius:99px;background:var(--ink);color:var(--parchment);font-size:12px;font-weight:600;box-shadow:var(--shadow-lg);animation:toast-in .3s ease-out;pointer-events:none;font-family:var(--font-display);letter-spacing:0.06em}
 @keyframes toast-in{0%{opacity:0;transform:translateX(-50%) translateY(10px)}100%{opacity:1;transform:translateX(-50%)}}
 
-#capstone-overlay{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(10,8,6,0.95);backdrop-filter:blur(4px)}
+#capstone-overlay{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(10,8,6,0.95)}
 #capstone-overlay[hidden]{display:none}
 .capstone-card{width:100%;max-width:460px;max-height:92vh;overflow-y:auto;border-radius:16px;border:1px solid rgba(245,158,11,0.3);background:linear-gradient(180deg,#1a1512,#0e0b08);box-shadow:0 0 80px -20px rgba(245,158,11,0.35);padding:32px 26px;text-align:center;color:#fde68a;animation:trial-rise .5s cubic-bezier(0.22,1,0.36,1)}
 .capstone-card .crown{font-size:44px;margin-bottom:10px}
@@ -834,6 +836,31 @@ body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
 #exp-chip{border-radius:2px;background:transparent;border-color:var(--ink-mid)}
 @media(max-width:768px){.chart-cartouche{display:none}}
 
+/* ═══ SWEEP II — sightings, suggests, legend ═══ */
+.sighting{padding:9px 12px;border:1px solid var(--grid-line);border-left:2px solid var(--verdigris);background:var(--hover-bg);margin-bottom:7px;border-radius:2px}
+.sight-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.sight-date{font-family:var(--font-mono);font-size:9.5px;letter-spacing:0.08em;color:var(--ink-light);text-transform:uppercase}
+.sight-title{font-size:12.5px;line-height:1.5;font-weight:600}
+.sight-title a{text-decoration:none;border-bottom:1px dotted var(--ink-mid)}
+.sight-title a:hover{border-bottom-color:var(--ink)}
+.sight-src{font-family:var(--font-mono);font-size:9.5px;color:var(--ink-light);margin-top:2px}
+.sight-more{font-size:10.5px;font-style:italic;color:var(--ink-light);margin-top:2px}
+
+#chart-suggest{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);z-index:12;text-align:center;padding:7px 20px;background:var(--parchment);border:1.5px solid var(--ink);box-shadow:0 0 0 3px var(--parchment),0 0 0 3.75px var(--ink-mid),var(--shadow-md);cursor:pointer;transition:transform .2s}
+#chart-suggest:hover{transform:translateX(-50%) translateY(-2px)}
+#chart-suggest .sug-kicker{display:block;font-family:var(--font-display);font-size:8px;letter-spacing:0.3em;color:var(--ink-faint);text-transform:uppercase}
+#chart-suggest .sug-act{display:block;font-family:var(--font-display);font-size:12px;letter-spacing:0.12em;color:var(--ink);margin-top:2px;text-transform:uppercase}
+@media(max-width:768px){#chart-suggest{bottom:12px;padding:5px 12px}}
+
+#legend-overlay{position:fixed;inset:0;z-index:95;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--overlay-bg)}
+#legend-overlay[hidden]{display:none}
+.legend-card{width:100%;max-width:520px;max-height:90vh;overflow-y:auto;border-radius:3px;background:var(--parchment-card-bg);border:1.5px solid var(--ink);box-shadow:0 0 0 4px var(--parchment),0 0 0 4.75px var(--ink-mid),var(--shadow-lg);padding:24px 26px;animation:trial-rise .3s cubic-bezier(0.34,1.56,0.64,1)}
+.legend-card h2{font-family:var(--font-display);font-size:12px;letter-spacing:0.24em;margin-bottom:16px;text-align:center}
+.leg-row{display:flex;align-items:center;gap:14px;margin-bottom:11px}
+.leg-swatch{flex:0 0 40px;display:flex;align-items:center;justify-content:center}
+.leg-text{font-size:12.5px;line-height:1.6;color:var(--ink)}
+.leg-text b{font-family:var(--font-display);font-size:11px;letter-spacing:0.06em}
+
 </style>
 </head>
 <body>
@@ -858,6 +885,8 @@ body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
       <button class="rail-btn" id="hope-toggle" onclick="toggleHope()" title="Reveal the hope creatures">Lvmen</button>
       <span class="flr">❧</span>
       <button class="rail-btn" onclick="toggleSearch()" title="Search ( / )">Qvære</button>
+      <span class="flr">❧</span>
+      <button class="rail-btn" onclick="toggleLegend()" title="How to read this chart">Legenda</button>
       <span class="flr">❧</span>
       <button class="rail-btn" id="theme-toggle" onclick="toggleTheme()" title="Day / candlelight">Nox</button>
       <span class="flr">❧</span>
@@ -1424,6 +1453,12 @@ function renderMap(el){
     var fs=isStrip?13:Math.min(22,Math.max(14,w/26));
     h+='<path id="lbl-'+r.id+'" d="M '+(x+w*0.02).toFixed(0)+' '+ly.toFixed(0)+' Q '+(x+w*0.5).toFixed(0)+' '+(ly-(isStrip?0:14)).toFixed(0)+' '+(x+w*0.98).toFixed(0)+' '+ly.toFixed(0)+'" fill="none"/>';
     h+='<text class="terr-name" font-size="'+fs+'"><textPath href="#lbl-'+r.id+'" startOffset="50%" text-anchor="middle">'+esc(r.name)+(mastered[r.id]?' ✦':'')+'</textPath></text>';
+    if(!isStrip&&r.epigraph){
+      var ey=ly+24;
+      var epi=r.epigraph.length>92?r.epigraph.slice(0,89)+'…':r.epigraph;
+      h+='<path id="epi-'+r.id+'" d="M '+(x+w*0.04).toFixed(0)+' '+ey.toFixed(0)+' Q '+(x+w*0.5).toFixed(0)+' '+(ey-12).toFixed(0)+' '+(x+w*0.96).toFixed(0)+' '+ey.toFixed(0)+'" fill="none"/>';
+      h+='<text class="terr-epi" font-size="11.5"><textPath href="#epi-'+r.id+'" startOffset="50%" text-anchor="middle">“'+esc(epi)+'”</textPath></text>';
+    }
     h+='</g>';
   });
   h+='</svg>';
@@ -1460,6 +1495,12 @@ function renderMap(el){
       var counterNames=countered.map(function(c){return c.name.replace('THE ','')}).join(', ');
       h+='<div class="hn" onclick="selectHope(\''+h2.id+'\')" style="left:'+h2.mapPosition.x*100+'%;top:'+h2.mapPosition.y*100+'%;transform:translate(-50%,-50%)" title="'+esc(h2.name)+' — counters '+esc(counterNames)+'"><span class="ring"><span class="ci">'+h2.icon+'</span></span><span class="cl">'+esc(h2.name.replace('THE ',''))+'</span></div>';
     });
+  }
+  {
+    var sug=null,sugVerb='';
+    for(var si=0;si<allCreatures.length;si++){var sc=allCreatures[si];if(exp.recorded.indexOf(sc.id)>=0&&exp.contained.indexOf(sc.id)<0){sug=sc;sugVerb='Face';break}}
+    if(!sug){for(var sj=0;sj<allCreatures.length;sj++){if(exp.recorded.indexOf(allCreatures[sj].id)<0){sug=allCreatures[sj];sugVerb='Seek';break}}}
+    if(sug)h+='<button id="chart-suggest" onclick="selectCreature(\''+sug.id+'\')"><span class="sug-kicker">The Ledger Suggests</span><span class="sug-act">'+sugVerb+' '+esc(sug.name.replace('THE ','the '))+' ⟶</span></button>';
   }
   h+='<div id="chart-neatline"></div>';
   h+='<div class="chart-ornament" style="left:24px;bottom:30px;width:104px;height:104px">'+compassRoseSVG()+'</div>';
@@ -2728,6 +2769,17 @@ function renderDetail(){
     h+='<section><h3>The Danger</h3><div class="tb">'+esc(c.technicalSpec)+'</div></section>';
   }
   h+='<section><h3>Countermeasure: '+esc(c.countermeasure.name)+'</h3><p>'+esc(c.countermeasure.description)+'</p></section>';
+  var sightings=threatSignals.filter(function(sg){return (sg.relatedCreatures||[]).indexOf(c.id)>=0});
+  if(sightings.length){
+    h+='<section><h3>Sightings</h3>';
+    sightings.slice(0,4).forEach(function(sg){
+      h+='<div class="sighting"><div class="sight-head"><span class="sight-date">'+fmt(sg.date)+'</span><span class="vb '+sg.verification+'">'+sg.verification+'</span></div>';
+      h+='<div class="sight-title">'+(sg.sourceUrl?'<a href="'+esc(sg.sourceUrl)+'" target="_blank" rel="noopener">'+esc(sg.title)+'</a>':esc(sg.title))+'</div>';
+      h+='<div class="sight-src">'+esc(sg.sourceLabel||sg.source)+'</div></div>';
+    });
+    if(sightings.length>4)h+='<div class="sight-more">+'+(sightings.length-4)+' more in the Observatory</div>';
+    h+='</section>';
+  }
   if(viewMode!=='novice'){
     h+='<section><h3>Threat Gradient</h3>';
     [['Likelihood',c.threatGradient.likelihood],['Impact',c.threatGradient.impact],['Stealth',c.threatGradient.detectability]].forEach(function(p){
@@ -3069,10 +3121,32 @@ function tallySVG(n){
   return '<svg width="'+Math.max(x,6)+'" height="16" viewBox="0 0 '+Math.max(x,6)+' 16" style="vertical-align:-3px">'+svg+'</svg>';
 }
 
+
+function toggleLegend(){
+  var ov=$('#legend-overlay');
+  if(ov&&!ov.hidden){ov.hidden=true;return}
+  if(!ov){ov=document.createElement('div');ov.id='legend-overlay';ov.setAttribute('onclick','if(event.target===this)this.hidden=true');document.body.appendChild(ov)}
+  var h='<div class="legend-card" role="dialog" aria-modal="true" aria-label="How to read this chart">';
+  h+='<h2>LEGENDA · HOW TO READ THIS CHART</h2>';
+  function row(sw,txt){return '<div class="leg-row"><span class="leg-swatch">'+sw+'</span><span class="leg-text">'+txt+'</span></div>'}
+  h+=row('<svg viewBox="0 0 34 24" width="34" height="24"><path d="M3 12 C5 5,10 3,17 4 C26 3,31 7,31 12 C31 18,25 21,17 20 C9 21,3 19,3 12 Z" fill="var(--land)" stroke="var(--ink)" stroke-width="1.2"/></svg>','A <b>territory</b> is one class of AI threat. Its name takes a gold leaf ✦ when you master every creature within.');
+  h+=row('<span class="ring" style="width:26px;height:26px"><span style="font-size:13px;filter:grayscale(1) opacity(.72)">🐍</span></span>','A <b>sigil</b> is one creature. Grey ink means <b>unrecorded</b> — open its dossier to record it and it takes colour.');
+  h+=row('<span class="ring" style="width:26px;height:26px"><span style="font-size:13px">🐍</span><span style="position:absolute;top:-2px;right:-2px;width:9px;height:9px;border-radius:50%;background:var(--gilt);border:1.5px solid var(--parchment)"></span></span>','A <b>gilt pip</b> means <b>contained</b> — you named its true countermeasure in a field trial.');
+  h+=row('<span class="ring" style="width:26px;height:26px;border-color:var(--vermilion)"><span style="font-size:13px">👻</span></span>','A <b>vermilion ring</b> marks a threat with <b>confirmed sightings</b> in the real world.');
+  h+=row('<svg viewBox="0 0 34 24" width="34" height="24"><line x1="2" y1="12" x2="32" y2="12" stroke="var(--vermilion)" stroke-width="1.6" stroke-dasharray="6 4"/></svg>','<b>Crimson routes</b> join a selected creature to its <b>compound risks</b> — patterns that amplify one another.');
+  h+=row('<svg viewBox="0 0 34 24" width="34" height="24"><line x1="2" y1="12" x2="32" y2="12" stroke="var(--gilt)" stroke-width="1.4" stroke-dasharray="3 5"/></svg>','<b>Gold routes</b> (toggle LVMEN) show the <b>wards of hope</b> and the threats each one counters.');
+  h+=row('<span style="font-family:var(--font-display);font-size:14px;color:var(--gilt)">✦</span>','Sigils grow with <b>threat score</b>; every dossier ends in a real countermeasure. Nothing here is beyond warding.');
+  h+='<div class="trial-actions" style="margin-top:14px"><button class="primary" onclick="document.getElementById(\'legend-overlay\').hidden=true">TO THE CHART</button></div>';
+  h+='</div>';
+  ov.innerHTML=h;ov.hidden=false;
+}
+
 // ── Trial keyboard (capture, so it preempts the app-level Escape) ──
 document.addEventListener('keydown',function(e){
   var cap=$('#capstone-overlay');
   if(cap&&!cap.hidden&&e.key==='Escape'){e.stopPropagation();cap.hidden=true;return}
+  var leg=$('#legend-overlay');
+  if(leg&&!leg.hidden&&e.key==='Escape'){e.stopPropagation();leg.hidden=true;return}
   var ov=$('#trial-overlay');
   if(!ov||ov.hidden)return;
   if(e.key==='Escape'){e.stopPropagation();closeTrial();return}
