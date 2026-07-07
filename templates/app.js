@@ -406,7 +406,7 @@ function toggleTheme(){
   darkMode=!darkMode;
   document.documentElement.setAttribute('data-theme',darkMode?'dark':'light');
   var btn=$('#theme-toggle');
-  if(btn)btn.textContent=darkMode?'\u2600\uFE0F Light':'\u{1F319} Dark';
+  if(btn)btn.textContent=darkMode?'Dies':'Nox';
   try{localStorage.setItem('tl-theme',darkMode?'dark':'light')}catch(e){}
   render();
   if(selectedCreature)renderDetail();
@@ -415,69 +415,189 @@ function initTheme(){
   try{var saved=localStorage.getItem('tl-theme');if(saved==='dark'){darkMode=true;document.documentElement.setAttribute('data-theme','dark')}}catch(e){}
   if(!darkMode&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches){darkMode=true;document.documentElement.setAttribute('data-theme','dark')}
   var btn=$('#theme-toggle');
-  if(btn)btn.textContent=darkMode?'\u2600\uFE0F Light':'\u{1F319} Dark';
+  if(btn)btn.textContent=darkMode?'Dies':'Nox';
 }
 
 // SWITCH VIEW
 function switchView(v){
   currentView=v;
-  $$('.nav-btn').forEach(function(b){b.classList.toggle('active',b.dataset.view===v)});
+  $$('.atlas-tab').forEach(function(b){b.classList.toggle('active',b.dataset.view===v)});
   render();
 }
 
+var VIEW_HEADS={'risk-matrix':'Plate I · The Risk Matrix','bestiary':'Plate II · EncyclopÆdia','compounds':'Plate III · Compovnd Threats','observatory':'Plate IV · The Observatory','field-guide':'Plate V · The Field Gvide','technical':'Plate VI · Technical Analysis'};
+
 function render(){
+  // The chart is the ground truth — always kept current beneath the plates.
+  renderMap($('#map-layer'));
   var vc=$('#view-container');
-  if(currentView==='map')renderMap(vc);
-  else if(currentView==='risk-matrix')renderRiskMatrix(vc);
-  else if(currentView==='bestiary')renderBestiary(vc);
-  else if(currentView==='compounds')renderCompounds(vc);
-  else if(currentView==='observatory')renderObservatory(vc);
-  else if(currentView==='field-guide')renderGrimoire(vc);
-  else if(currentView==='technical')renderTechnical(vc);
+  if(currentView==='map'){vc.innerHTML='';return}
+  var tmp=document.createElement('div');
+  if(currentView==='risk-matrix')renderRiskMatrix(tmp);
+  else if(currentView==='bestiary')renderBestiary(tmp);
+  else if(currentView==='compounds')renderCompounds(tmp);
+  else if(currentView==='observatory')renderObservatory(tmp);
+  else if(currentView==='field-guide')renderGrimoire(tmp);
+  else if(currentView==='technical')renderTechnical(tmp);
+  var flush=currentView==='field-guide'?' folio-flush':'';
+  vc.innerHTML='<div class="plate-scrim" onclick="switchView(\'map\')" title="Return to the chart"></div><div class="plate-folio'+flush+'">'+(flush?'':'<div class="running-head"><span>'+(VIEW_HEADS[currentView]||'')+'</span><span>Natvralis Fvtvra</span></div>')+'<div class="folio-body"></div></div>';
+  vc.querySelector('.folio-body').appendChild(tmp);
 }
 
-// ── MAP ──
-function renderMap(el){
-  var h='<div id="map-view">';
+// ── THE CHART — engraved atlas plate ──
+var _terrCache=null;
+
+function pointOnRectPerimeter(x,y,w,h,t){
+  var per=2*(w+h),d=t*per;
+  if(d<w)return{x:x+d,y:y,side:0};
+  d-=w;if(d<h)return{x:x+w,y:y+d,side:1};
+  d-=h;if(d<w)return{x:x+w-d,y:y+h,side:2};
+  d-=w;return{x:x,y:y+h-d,side:3};
+}
+function outwardNormal(side){return side===0?{x:0,y:-1}:side===1?{x:1,y:0}:side===2?{x:0,y:1}:{x:-1,y:0}}
+function catmullRomClosed(pts){
+  var n=pts.length,d='M'+pts[0][0].toFixed(1)+' '+pts[0][1].toFixed(1);
+  for(var i=0;i<n;i++){
+    var p0=pts[(i-1+n)%n],p1=pts[i],p2=pts[(i+1)%n],p3=pts[(i+2)%n];
+    d+='C'+(p1[0]+(p2[0]-p0[0])/6).toFixed(1)+' '+(p1[1]+(p2[1]-p0[1])/6).toFixed(1)+' '+(p2[0]-(p3[0]-p1[0])/6).toFixed(1)+' '+(p2[1]-(p3[1]-p1[1])/6).toFixed(1)+' '+p2[0].toFixed(1)+' '+p2[1].toFixed(1);
+  }
+  return d+'Z';
+}
+function territoryPath(r,off){
+  var x=r.mapPosition.x*1600,y=r.mapPosition.y*1000,w=r.mapPosition.width*1600,h=r.mapPosition.height*1000;
+  var rnd=seededRand(hashSeed(r.id));
+  var phase=rnd()*6.283,f1=3+Math.floor(rnd()*2),f2=9+Math.floor(rnd()*4);
+  var per=2*(w+h),n=Math.max(20,Math.round(per/60));
+  var amp=Math.min(13,Math.min(w,h)*0.09);
+  var pts=[];
+  for(var i=0;i<n;i++){
+    var t=i/n,p=pointOnRectPerimeter(x,y,w,h,t),nm=outwardNormal(p.side);
+    var a=amp*Math.sin(t*6.283*f1+phase)+amp*0.4*Math.sin(t*6.283*f2+phase*1.7)+(rnd()-0.5)*3+(off||0);
+    pts.push([p.x+nm.x*a,p.y+nm.y*a]);
+  }
+  return catmullRomClosed(pts);
+}
+function terrCache(){
+  if(_terrCache)return _terrCache;
+  _terrCache={};
   regions.forEach(function(r){
-    var rc=gcr(r.id);
-    var confirmed=rc.filter(function(c){return c.currentStatus.status==='confirmed'}).length;
-    var emerging=rc.filter(function(c){return c.currentStatus.status==='emerging'}).length;
-    h+='<div class="region-overlay" onclick="selectRegion(\''+r.id+'\')" style="left:'+r.mapPosition.x*100+'%;top:'+r.mapPosition.y*100+'%;width:'+r.mapPosition.width*100+'%;height:'+r.mapPosition.height*100+'%;border-color:'+r.color.accent+'80;background:'+r.color.primary+(darkMode?'30':'15')+'"><div class="rl"><h3 style="color:'+r.color.accent+'">'+esc(r.name)+'</h3><p>'+esc(r.subtitle)+'</p><p class="rc" style="color:'+r.color.accent+'">'+rc.length+' creatures'+(confirmed?' \u00B7 '+confirmed+' confirmed':'')+(emerging?' \u00B7 '+emerging+' emerging':'')+'</p></div></div>';
+    _terrCache[r.id]={land:territoryPath(r,0),w1:territoryPath(r,7),w2:territoryPath(r,14),w3:territoryPath(r,21)};
   });
+  return _terrCache;
+}
+function expMasteredRegions(){
+  var out={};
+  regions.forEach(function(r){
+    var cs=gcr(r.id);
+    out[r.id]=cs.length>0&&cs.every(function(c){return exp.contained.indexOf(c.id)>=0});
+  });
+  return out;
+}
+function compassRoseSVG(){
+  var s='<svg viewBox="0 0 100 100" width="100%" height="100%" fill="none" stroke="currentColor">';
+  s+='<circle cx="50" cy="50" r="46" stroke-width="1"/><circle cx="50" cy="50" r="40" stroke-width=".4"/><circle cx="50" cy="50" r="24" stroke-width=".4"/>';
+  for(var i=0;i<16;i++){s+='<line x1="50" y1="6" x2="50" y2="12" stroke-width="'+(i%4===0?1:0.4)+'" transform="rotate('+i*22.5+' 50 50)"/>'}
+  s+='<polygon points="50,8 46,50 50,54 54,50" fill="currentColor" stroke="none" opacity=".85"/>';
+  s+='<polygon points="50,92 46,50 50,46 54,50" fill="currentColor" stroke="none" opacity=".3"/>';
+  s+='<polygon points="8,50 50,46 54,50 50,54" fill="currentColor" stroke="none" opacity=".3"/>';
+  s+='<polygon points="92,50 50,46 46,50 50,54" fill="currentColor" stroke="none" opacity=".3"/>';
+  s+='<polygon points="50,20 44,50 50,56 56,50" fill="none" stroke-width=".5" transform="rotate(45 50 50)"/><polygon points="50,20 44,50 50,56 56,50" fill="none" stroke-width=".5" transform="rotate(-45 50 50)"/>';
+  s+='<text x="50" y="4.5" text-anchor="middle" font-size="7" fill="currentColor" stroke="none">N</text>';
+  return s+'</svg>';
+}
+function serpentSVG(){
+  return '<svg viewBox="0 0 100 60" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 42 C 20 18, 32 18, 42 38 C 50 54, 60 54, 68 40 C 74 30, 82 28, 88 34"/><path d="M88 34 l 7 -7 M88 34 l 9 1" stroke-width="1.3"/><circle cx="89" cy="31" r="1" fill="currentColor" stroke="none"/><path d="M6 42 l -4 6 M6 42 l 6 5" stroke-width="1.1"/><path d="M30 24 c 2 -5 6 -5 8 0 M56 48 c 2 4 6 4 8 0" stroke-width=".8" opacity=".7"/></svg>';
+}
+function renderMap(el){
+  if(!el)return;
+  var cache=terrCache();
+  var mastered=expMasteredRegions();
+  var allMastered=regions.every(function(r){return mastered[r.id]});
+  var h='<div id="map-view">';
+  h+='<svg id="chart-svg" viewBox="0 0 1600 1000" preserveAspectRatio="none">';
+  h+='<defs><pattern id="hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="7" stroke="var(--ink)" stroke-width=".5"/></pattern></defs>';
+  [[184,385],[1240,140]].forEach(function(nd){
+    for(var i=0;i<16;i++){
+      var a=i*Math.PI/8;
+      h+='<line x1="'+nd[0]+'" y1="'+nd[1]+'" x2="'+(nd[0]+Math.cos(a)*2400).toFixed(0)+'" y2="'+(nd[1]+Math.sin(a)*2400).toFixed(0)+'" stroke="var(--ink)" stroke-width=".5" opacity=".06"/>';
+    }
+  });
+  for(var gx=160;gx<1600;gx+=160)h+='<line x1="'+gx+'" y1="0" x2="'+gx+'" y2="1000" stroke="var(--ink)" stroke-width=".4" opacity=".05"/>';
+  for(var gy=125;gy<1000;gy+=125)h+='<line x1="0" y1="'+gy+'" x2="1600" y2="'+gy+'" stroke="var(--ink)" stroke-width=".4" opacity=".05"/>';
+  regions.forEach(function(r){
+    var t=cache[r.id];
+    h+='<g class="terr'+(mastered[r.id]?' terr-gilt':'')+'" onclick="selectRegion(\''+r.id+'\')">';
+    h+='<path d="'+t.land+'" fill="var(--land)"/>';
+    h+='<path d="'+t.land+'" fill="'+r.color.accent+'" opacity="'+(darkMode?'0.13':'0.08')+'"/>';
+    h+='<path d="'+t.land+'" fill="url(#hatch)" opacity=".05"/>';
+    h+='<path class="wl3" d="'+t.w3+'" stroke="var(--ink)" stroke-width=".45" opacity=".09" fill="none"/>';
+    h+='<path class="wl2" d="'+t.w2+'" stroke="var(--ink)" stroke-width=".7" opacity=".16" fill="none"/>';
+    h+='<path class="wl1" d="'+t.w1+'" stroke="var(--ink)" stroke-width="1" opacity=".28" fill="none"/>';
+    h+='<path class="terr-coast" d="'+t.land+'"/>';
+    var x=r.mapPosition.x*1600,y=r.mapPosition.y*1000,w=r.mapPosition.width*1600,ht=r.mapPosition.height*1000;
+    var isStrip=ht<90;
+    var ly=isStrip?(y-9):(y+ht*0.24);
+    var fs=isStrip?13:Math.min(22,Math.max(14,w/26));
+    h+='<path id="lbl-'+r.id+'" d="M '+(x+w*0.02).toFixed(0)+' '+ly.toFixed(0)+' Q '+(x+w*0.5).toFixed(0)+' '+(ly-(isStrip?0:14)).toFixed(0)+' '+(x+w*0.98).toFixed(0)+' '+ly.toFixed(0)+'" fill="none"/>';
+    h+='<text class="terr-name" font-size="'+fs+'"><textPath href="#lbl-'+r.id+'" startOffset="50%" text-anchor="middle">'+esc(r.name)+(mastered[r.id]?' ✦':'')+'</textPath></text>';
+    h+='</g>';
+  });
+  h+='</svg>';
   h+='<svg id="compound-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">';
   if(selectedCreature){
     (selectedCreature.compoundRisk||[]).forEach(function(tid){
       var t=gc(tid);
-      if(t)h+='<line x1="'+selectedCreature.mapPosition.x*1000+'" y1="'+selectedCreature.mapPosition.y*1000+'" x2="'+t.mapPosition.x*1000+'" y2="'+t.mapPosition.y*1000+'" stroke="#f59e0b" stroke-width="2" opacity="0.6" stroke-dasharray="8 5"><animate attributeName="stroke-dashoffset" from="0" to="26" dur="1.5s" repeatCount="indefinite"/></line>';
+      if(t)h+='<line x1="'+selectedCreature.mapPosition.x*1000+'" y1="'+selectedCreature.mapPosition.y*1000+'" x2="'+t.mapPosition.x*1000+'" y2="'+t.mapPosition.y*1000+'" stroke="var(--vermilion)" stroke-width="1.6" opacity="0.55" stroke-dasharray="7 5"><animate attributeName="stroke-dashoffset" from="0" to="24" dur="1.6s" repeatCount="indefinite"/></line>';
+    });
+  }
+  if(showHope){
+    hopeCreatures.forEach(function(h2){
+      h2.counters.forEach(function(cid){
+        var c=gc(cid);
+        if(c)h+='<line x1="'+h2.mapPosition.x*1000+'" y1="'+h2.mapPosition.y*1000+'" x2="'+c.mapPosition.x*1000+'" y2="'+c.mapPosition.y*1000+'" stroke="var(--gilt)" stroke-width="1.2" opacity="0.35" stroke-dasharray="3 6"><animate attributeName="stroke-dashoffset" from="0" to="18" dur="2s" repeatCount="indefinite"/></line>';
+      });
     });
   }
   h+='</svg>';
   allCreatures.forEach(function(c){
     var score=c.threatGradient.likelihood+c.threatGradient.impact+c.threatGradient.detectability;
-    var scale=0.8+(score/15)*0.4;
-    var sel=selectedCreature&&selectedCreature.id===c.id?' sel':'';
-    var conn=selectedCreature&&selectedCreature.compoundRisk&&selectedCreature.compoundRisk.indexOf(c.id)>=0?' conn':'';
-    var st=c.currentStatus.status==='emerging'?' status-emerging':c.currentStatus.status==='confirmed'?' status-confirmed':'';
-    h+='<div class="cn'+sel+conn+st+'" onclick="selectCreature(\''+c.id+'\')" style="left:'+c.mapPosition.x*100+'%;top:'+c.mapPosition.y*100+'%;transform:translate(-50%,-50%) scale('+scale+')" title="'+esc(c.name)+' \u2014 '+score+'/15"><span class="ci">'+c.icon+'</span><span class="cl">'+esc(c.name.replace('THE ',''))+'</span></div>';
+    var scale=0.82+(score/15)*0.36;
+    var cls='cn';
+    if(selectedCreature&&selectedCreature.id===c.id)cls+=' sel';
+    if(selectedCreature&&selectedCreature.compoundRisk&&selectedCreature.compoundRisk.indexOf(c.id)>=0)cls+=' conn';
+    if(c.currentStatus.status==='confirmed')cls+=' stat-confirmed';
+    if(exp.recorded.indexOf(c.id)>=0)cls+=' rec';
+    if(exp.contained.indexOf(c.id)>=0)cls+=' cont';
+    h+='<div class="'+cls+'" onclick="selectCreature(\''+c.id+'\')" style="left:'+c.mapPosition.x*100+'%;top:'+c.mapPosition.y*100+'%;transform:translate(-50%,-50%) scale('+scale+')" title="'+esc(c.name)+' — '+score+'/15"><span class="ring"><span class="ci">'+c.icon+'</span><span class="pip"></span></span><span class="cl">'+esc(c.name.replace('THE ',''))+'</span></div>';
   });
   if(showHope){
-    h+='<svg id="hope-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:28">';
-    hopeCreatures.forEach(function(h2){
-      h2.counters.forEach(function(cid){
-        var c=gc(cid);
-        if(c)h+='<line x1="'+h2.mapPosition.x*1000+'" y1="'+h2.mapPosition.y*1000+'" x2="'+c.mapPosition.x*1000+'" y2="'+c.mapPosition.y*1000+'" stroke="#eab308" stroke-width="1.5" opacity="0.35" stroke-dasharray="4 6"><animate attributeName="stroke-dashoffset" from="0" to="20" dur="2s" repeatCount="indefinite"/></line>';
-      });
-    });
-    h+='</svg>';
     hopeCreatures.forEach(function(h2){
       var countered=h2.counters.map(gc).filter(Boolean);
       var counterNames=countered.map(function(c){return c.name.replace('THE ','')}).join(', ');
-      h+='<div class="hn" onclick="selectHope(\''+h2.id+'\')" style="left:'+h2.mapPosition.x*100+'%;top:'+h2.mapPosition.y*100+'%;transform:translate(-50%,-50%);cursor:pointer" title="'+esc(h2.name)+' \u2014 counters '+esc(counterNames)+'"><span class="ci">'+h2.icon+'</span><span class="cl">'+esc(h2.name.replace('THE ',''))+'</span></div>';
+      h+='<div class="hn" onclick="selectHope(\''+h2.id+'\')" style="left:'+h2.mapPosition.x*100+'%;top:'+h2.mapPosition.y*100+'%;transform:translate(-50%,-50%)" title="'+esc(h2.name)+' — counters '+esc(counterNames)+'"><span class="ring"><span class="ci">'+h2.icon+'</span></span><span class="cl">'+esc(h2.name.replace('THE ',''))+'</span></div>';
     });
   }
+  h+='<div id="chart-neatline"></div>';
+  h+='<div class="chart-ornament" style="left:24px;bottom:30px;width:104px;height:104px">'+compassRoseSVG()+'</div>';
+  h+='<div class="chart-ornament" style="right:30px;top:22px;width:96px;height:58px;opacity:.28">'+serpentSVG()+'</div>';
+  h+='<div class="chart-cartouche"><div class="cart-title">TABVLA MVNDI LATENTIS</div><div class="cart-sub">'+allCreatures.length+' BELLVAE · VIII REGIONES</div><div class="cart-sub">HIC SVNT DRACONES</div></div>';
   if(!mapRevealed){
-    h+='<div id="fog-overlay" onclick="revealMap()"><div style="text-align:center;max-width:600px;padding:0 32px"><h1>NATURALIS FUTURA</h1><p style="font-size:clamp(0.85rem,2.2vw,1.1rem)">An Encyclopaedia of the Latent World</p><p>Beneath the surface of artificial intelligence lies a hidden world \u2014 vast, unmapped, and evolving. Like Pliny before us, we catalogue what we find. <em style="color:var(--ink)">Enter the latent world.</em></p><p style="margin-top:32px;font-size:11px;animation:fade-in-up 1s ease-out 3s forwards;opacity:0">Click to enter</p></div></div>';
+    h+='<div id="fog-overlay" onclick="revealMap()">';
+    h+='<div class="fronti-frame"></div>';
+    h+='<div class="fronti-serpent" style="left:34px;top:30px">'+serpentSVG()+'</div>';
+    h+='<div class="fronti-serpent" style="right:34px;top:30px;transform:scaleX(-1)">'+serpentSVG()+'</div>';
+    h+='<div class="fronti-serpent" style="left:34px;bottom:30px;transform:scaleY(-1)">'+serpentSVG()+'</div>';
+    h+='<div class="fronti-serpent" style="right:34px;bottom:30px;transform:scale(-1)">'+serpentSVG()+'</div>';
+    h+='<div class="fronti-inner">';
+    h+='<div class="fronti-fleurons">❧ ✦ ☙</div>';
+    h+='<h1 class="fronti-title'+(allMastered?' gilded':'')+'">NATURALIS FUTURA</h1>';
+    h+='<div class="fronti-rule"></div>';
+    h+='<div class="fronti-sive">Sive · Tabvla Latentivm</div>';
+    h+='<div class="fronti-sub">An Encyclopaedia of the Latent World</div>';
+    h+='<div class="fronti-device">'+compassRoseSVG()+'</div>';
+    h+='<div class="fronti-imprint">Ex Officina Plinii · Anno MMXXVI</div>';
+    h+='<div><button class="fronti-enter" onclick="revealMap()">Enter the Latent World</button></div>';
+    h+='</div></div>';
   }
   h+='</div>';
   el.innerHTML=h;
@@ -542,7 +662,8 @@ function renderBestiary(el){
   filtered.forEach(function(c){
     var score=c.threatGradient.likelihood+c.threatGradient.impact+c.threatGradient.detectability;
     var r=gr(c.region);
-    h+='<div class="bc" onclick="selectCreature(\''+c.id+'\')" style="border-left:3px solid '+(r?r.color.accent:'#ccc')+'"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:28px">'+c.icon+'</span><div style="flex:1"><div style="font-size:13px;font-weight:700;letter-spacing:0.05em;font-family:var(--font-display)">'+esc(c.name)+'</div><div style="font-size:10px;color:var(--ink-light);margin-top:2px">'+esc(r?r.name:c.region)+' \u00B7 <span class="sb '+c.currentStatus.status+'" style="font-size:9px;padding:1px 6px">'+c.currentStatus.status+'</span></div></div><div style="text-align:center;margin-left:auto"><div style="font-size:18px;font-weight:700;font-family:var(--font-mono)">'+score+'</div><div style="font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-light)">/15</div></div></div></div>';
+    var plateNum=toRoman(allCreatures.indexOf(c)+1);
+    h+='<div class="bc" data-plate="PLATE '+plateNum+'" onclick="selectCreature(\''+c.id+'\')" style="border-left:3px solid '+(r?r.color.accent:'#ccc')+'"><div style="display:flex;align-items:center;gap:12px"><span class="ring"><span style="font-size:20px;line-height:1">'+c.icon+'</span></span><div style="flex:1"><div style="font-size:13px;font-weight:700;letter-spacing:0.05em;font-family:var(--font-display)">'+esc(c.name)+'</div><div style="font-size:10px;color:var(--ink-light);margin-top:2px">'+esc(r?r.name:c.region)+' \u00B7 <span class="sb '+c.currentStatus.status+'" style="font-size:9px;padding:1px 6px">'+c.currentStatus.status+'</span></div></div><div style="text-align:center;margin-left:auto"><div style="font-size:18px;font-weight:700;font-family:var(--font-mono)">'+score+'</div><div style="font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-light)">/15</div></div></div></div>';
   });
   h+='</div></div>';
   el.innerHTML=h;
@@ -1709,7 +1830,7 @@ function renderDetail(){
   var connected=(c.compoundRisk||[]).map(gc).filter(Boolean);
 
   var h='<div class="dh"><div>';
-  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="font-size:28px">'+c.icon+'</span><h2 style="font-family:var(--font-display);font-size:20px;font-weight:700;letter-spacing:0.06em">'+esc(c.name)+'</h2></div>';
+  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span class="ring dh-ring"><span style="font-size:24px;line-height:1">'+c.icon+'</span></span><h2 style="font-family:var(--font-display);font-size:20px;font-weight:700;letter-spacing:0.06em">'+esc(c.name)+'</h2></div>';
   h+='<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-light)"><span>'+esc(r?r.name:c.region)+'</span><span>|</span><span class="sb '+c.currentStatus.status+'">'+c.currentStatus.status+'</span></div>';
   h+='</div><div style="display:flex;align-items:center">'+expandBtnHtml()+'<button class="xb" onclick="closeDetail()">&times;</button></div></div>';
   h+=expDetailStrip(c);
@@ -1796,7 +1917,7 @@ function expandBtnHtml(){
 function closeDetail(){panelExpanded=false;selectedCreature=null;var p=$('#detail-panel');p.classList.remove('open','expanded');p.innerHTML='';render()}
 
 // ── ACTIONS ──
-function revealMap(){mapRevealed=true;var f=$('#fog-overlay');if(f)f.classList.add('revealed')}
+function revealMap(){mapRevealed=true;try{localStorage.setItem('nf-entered','1')}catch(e){}var f=$('#fog-overlay');if(f)f.classList.add('revealed')}
 function selectRegion(rid){
   var r=gr(rid);if(!r)return;
   statusFilter='all';
@@ -1854,8 +1975,7 @@ document.addEventListener('keydown',function(e){
   }
 });
 
-initTheme();
-render();
+// boot moved to end of file (Expedition state must exist before the chart renders)
 
 // ═══════════════════════════════════════
 // EXPEDITION MODE — collection, trials, XP
@@ -1894,8 +2014,8 @@ function expChip(){
   if(!chip){
     chip=document.createElement('button');chip.id='exp-chip';
     chip.setAttribute('onclick','toggleExpPop()');
-    var nav=$('#bottom-nav');var hope=$('#hope-toggle');
-    if(nav&&hope)nav.insertBefore(chip,hope);else if(nav)nav.appendChild(chip);
+    var util=document.querySelector('#atlas-rail .rail-util');
+    if(util)util.insertBefore(chip,util.firstChild);
   }
   var t=expTitle(),n=expNext();
   var pct=n?Math.max(0,Math.min(100,(exp.xp-t[0])/(n[0]-t[0])*100)):100;
@@ -1941,7 +2061,7 @@ function renderTrial(){
   var c=gc(ts.cid);var r=gr(c.region);
   var score=c.threatGradient.likelihood+c.threatGradient.impact+c.threatGradient.detectability;
   var h='<div class="trial-card" role="dialog" aria-modal="true" aria-label="Field trial: '+esc(c.name)+'">';
-  h+='<h2>⚔️ FIELD TRIAL'+(exp.streak>=2?' <span style="font-size:10px;color:#b45309">\u{1F525} '+exp.streak+' streak · '+expMult()+'x XP</span>':'')+'</h2>';
+  h+='<h2>⚔️ FIELD TRIAL'+(exp.streak>=2?' <span style="font-size:10px;color:var(--gilt)">'+tallySVG(exp.streak)+' '+expMult()+'x</span>':'')+'</h2>';
   h+='<div class="trial-creature"><span class="ti">'+c.icon+'</span><div><h3>'+esc(c.name)+'</h3><p>'+esc(r?r.name:'')+' · '+esc(c.threatClass)+' · threat '+score+'/15</p></div></div>';
   if(!ts.done){
     h+='<p class="trial-q">Every creature of the latent space has a weakness — a real countermeasure from AI safety research. Name the technique that contains this one. <span style="opacity:0.6">Press 1–'+ts.opts.length+' or click.</span></p>';
@@ -1956,11 +2076,11 @@ function renderTrial(){
       h+='<div class="'+cls+'"><span class="num">'+(i+1)+'</span><span>'+esc(o.label)+'</span></div>';
     });
     if(ts.won){
-      h+='<div class="trial-verdict win"><h3>THE LIGHT PREVAILS</h3><p style="font-size:11px;color:var(--ink-light)">The darkness recedes.</p><p class="xp">+'+ts.xpEarned+' XP'+(ts.mult>1?' ('+ts.mult+'x streak)':'')+'</p>'+(ts.newTitle?'<p style="margin-top:6px;font-size:12px;font-weight:700;color:#b45309">⭐ New title: '+ts.newTitle+'</p>':'')+(ts.mastered?'<p style="margin-top:6px;font-size:12px;font-weight:700;color:#b45309">\u{1F3F4} '+esc(ts.mastered)+' MASTERED · +100 XP</p>':'')+'</div>';
+      h+='<div class="trial-verdict win"><span class="stamp probatum">PROBATVM</span><h3>THE LIGHT PREVAILS</h3><p style="font-size:11px;color:var(--ink-light)">The darkness recedes.</p><p class="xp">+'+ts.xpEarned+' XP'+(ts.mult>1?' ('+ts.mult+'x streak)':'')+'</p>'+(ts.newTitle?'<p style="margin-top:6px;font-size:12px;font-weight:700;color:#b45309">⭐ New title: '+ts.newTitle+'</p>':'')+(ts.mastered?'<p style="margin-top:6px;font-size:12px;font-weight:700;color:#b45309">\u{1F3F4} '+esc(ts.mastered)+' MASTERED · +100 XP</p>':'')+'</div>';
       h+='<div class="trial-note"><strong>'+esc(gc(ts.cid).countermeasure.name)+'</strong> — '+esc(truncSentences(gc(ts.cid).countermeasure.description,2))+'</div>';
       h+='<div class="trial-actions"><button class="primary" onclick="closeTrial()">CONTINUE THE EXPEDITION</button></div>';
     }else{
-      h+='<div class="trial-verdict loss"><h3>THE DARKNESS PERSISTS</h3><p style="font-size:12px;color:var(--ink)">The correct technique was <strong>'+esc(gc(ts.cid).countermeasure.name)+'</strong>.</p></div>';
+      h+='<div class="trial-verdict loss"><span class="stamp reprobatum">REPROBATVM</span><h3>THE DARKNESS PERSISTS</h3><p style="font-size:12px;color:var(--ink)">The correct technique was <strong>'+esc(gc(ts.cid).countermeasure.name)+'</strong>.</p></div>';
       h+='<div class="trial-note">'+esc(truncSentences(gc(ts.cid).countermeasure.description,2))+'</div>';
       h+='<div class="trial-actions"><button class="primary" onclick="startTrial(\''+ts.cid+'\')">FIGHT AGAIN</button><button class="ghost" onclick="closeTrial()">Retreat</button></div>';
     }
@@ -1990,6 +2110,7 @@ function answerTrial(i){
       if(allDone&&mates.length){ts.mastered=(gr(c.region)||{}).name||c.region;exp.xp+=100}
     }
     expSave();expChip();
+    if(currentView==='map')render();
     if(exp.contained.length===allCreatures.length){renderTrial();setTimeout(showCapstone,1400)}
     else renderTrial();
     if(selectedCreature&&selectedCreature.id===c.id)renderDetail();
@@ -2050,6 +2171,20 @@ function showCapstone(){
   ov.innerHTML=h;ov.hidden=false;
 }
 
+
+function tallySVG(n){
+  var groups=Math.floor(n/5),rem=n%5,x=2,svg='';
+  function strokes(cnt,gx,cross){
+    var out='';
+    for(var i=0;i<cnt;i++)out+='<line x1="'+(gx+i*4)+'" y1="2" x2="'+(gx+i*4)+'" y2="14" stroke="currentColor" stroke-width="1.4"/>';
+    if(cross)out+='<line x1="'+(gx-2)+'" y1="12" x2="'+(gx+14)+'" y2="4" stroke="currentColor" stroke-width="1.4"/>';
+    return out;
+  }
+  for(var g=0;g<groups;g++){svg+=strokes(4,x,true);x+=22}
+  if(rem){svg+=strokes(rem,x,false);x+=rem*4+4}
+  return '<svg width="'+Math.max(x,6)+'" height="16" viewBox="0 0 '+Math.max(x,6)+' 16" style="vertical-align:-3px">'+svg+'</svg>';
+}
+
 // ── Trial keyboard (capture, so it preempts the app-level Escape) ──
 document.addEventListener('keydown',function(e){
   var cap=$('#capstone-overlay');
@@ -2066,4 +2201,7 @@ document.addEventListener('keydown',function(e){
   }
 },true);
 
+initTheme();
+try{if(localStorage.getItem('nf-entered'))mapRevealed=true}catch(e){}
+render();
 expChip();
