@@ -513,7 +513,8 @@ function renderMap(el){
   var cache=terrCache();
   var mastered=expMasteredRegions();
   var allMastered=regions.every(function(r){return mastered[r.id]});
-  var h='<div id="map-view">';
+  var av=vActive(),avSt=av?vState(av.id):null;
+  var h='<div id="map-view"'+(av?' class="voyaging"':'')+'>';
   h+='<svg id="chart-svg" viewBox="0 0 1600 1000" preserveAspectRatio="none">';
   h+='<defs><pattern id="hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="7" stroke="var(--ink)" stroke-width=".5"/></pattern></defs>';
   [[184,385],[1240,140]].forEach(function(nd){
@@ -565,6 +566,7 @@ function renderMap(el){
     });
   }
   h+='</svg>';
+  h+='<svg id="voyage-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">'+voyageTracksSVG()+'</svg>';
   allCreatures.forEach(function(c){
     var score=c.threatGradient.likelihood+c.threatGradient.impact+c.threatGradient.detectability;
     var scale=0.82+(score/15)*0.36;
@@ -574,7 +576,17 @@ function renderMap(el){
     if(c.currentStatus.status==='confirmed')cls+=' stat-confirmed';
     if(exp.recorded.indexOf(c.id)>=0)cls+=' rec';
     if(exp.contained.indexOf(c.id)>=0)cls+=' cont';
-    h+='<div class="'+cls+'" onclick="selectCreature(\''+c.id+'\')" style="left:'+c.mapPosition.x*100+'%;top:'+c.mapPosition.y*100+'%;transform:translate(-50%,-50%) scale('+scale+')" title="'+esc(c.name)+' — '+score+'/15"><span class="ring"><span class="ci">'+c.icon+'</span><span class="pip"></span></span><span class="cl">'+esc(c.name.replace('THE ',''))+'</span></div>';
+    var vnum='';
+    if(av){
+      var vi=vIndexOf(av,c.id);
+      if(vi>=0){
+        cls+=' on-course';
+        if(vi===avSt.stop)cls+=' course-here';
+        if(avSt.logged.indexOf(c.id)>=0)cls+=' course-logged';
+        vnum='<span class="vnum">'+toRoman(vi+1)+'</span>';
+      }
+    }
+    h+='<div class="'+cls+'" data-cid="'+c.id+'" onclick="selectCreature(\''+c.id+'\')" style="left:'+c.mapPosition.x*100+'%;top:'+c.mapPosition.y*100+'%;transform:translate(-50%,-50%) scale('+scale+')" title="'+esc(c.name)+' — '+score+'/15"><span class="ring"><span class="ci">'+c.icon+'</span><span class="pip"></span>'+vnum+'</span><span class="cl">'+esc(c.name.replace('THE ',''))+'</span></div>';
   });
   if(showHope){
     hopeCreatures.forEach(function(h2){
@@ -583,7 +595,12 @@ function renderMap(el){
       h+='<div class="hn" onclick="selectHope(\''+h2.id+'\')" style="left:'+h2.mapPosition.x*100+'%;top:'+h2.mapPosition.y*100+'%;transform:translate(-50%,-50%)" title="'+esc(h2.name)+' — counters '+esc(counterNames)+'"><span class="ring"><span class="ci">'+h2.icon+'</span></span><span class="cl">'+esc(h2.name.replace('THE ',''))+'</span></div>';
     });
   }
-  {
+  if(av){
+    h+=voyageLogBar();
+  }else if(!exp.recorded.length&&!vState('circumnavigation').done){
+    // A reader with an empty ledger is offered a pilot before a specimen.
+    h+='<button id="chart-suggest" class="sug-voyage" onclick="startVoyage(\'circumnavigation\')"><span class="sug-kicker">The Ledger Suggests</span><span class="sug-act">⚑ Sail the First Voyage ⟶</span></button>';
+  }else{
     var sug=null,sugVerb='';
     for(var si=0;si<allCreatures.length;si++){var sc=allCreatures[si];if(exp.recorded.indexOf(sc.id)>=0&&exp.contained.indexOf(sc.id)<0){sug=sc;sugVerb='Face';break}}
     if(!sug){for(var sj=0;sj<allCreatures.length;sj++){if(exp.recorded.indexOf(allCreatures[sj].id)<0){sug=allCreatures[sj];sugVerb='Seek';break}}}
@@ -613,6 +630,7 @@ function renderMap(el){
   }
   h+='</div>';
   el.innerHTML=h;
+  voyageAvoid();
 }
 
 // ── RISK MATRIX ──
@@ -1830,6 +1848,7 @@ function selectCreature(id){
   selectedCreature=gc(id);
   if(!selectedCreature)return;
   expRecord(id); // opening a dossier records the specimen
+  voyageRecord(id); // …and logs the landfall, if we are sailing a course
   renderDetail();
   render();
 }
@@ -1933,6 +1952,8 @@ function togglePanelExpand(){
   if(btn)btn.title=panelExpanded?'Collapse panel':'Expand panel';
   var ico=btn?btn.querySelector('svg use'):null;
   if(ico)ico.setAttribute('href',panelExpanded?'#icon-collapse':'#icon-expand');
+  // The panel width animates over .3s; re-berth the log bar once it has settled.
+  voyageAvoidSoon();setTimeout(voyageAvoidSoon,340);
 }
 function expandBtnHtml(){
   return '<button class="expand-btn" onclick="togglePanelExpand()" title="'+(panelExpanded?'Collapse panel':'Expand panel')+'"><svg viewBox="0 0 24 24"><use href="'+(panelExpanded?'#icon-collapse':'#icon-expand')+'"/></svg></button>';
@@ -2009,8 +2030,8 @@ var exp=expLoad();
 var trialState=null;
 
 function expLoad(){
-  try{var s=JSON.parse(localStorage.getItem(EXP_KEY));if(s&&s.version===1)return s}catch(e){}
-  return {recorded:[],contained:[],xp:0,wins:0,losses:0,streak:0,bestStreak:0,version:1,createdAt:new Date().toISOString()};
+  try{var s=JSON.parse(localStorage.getItem(EXP_KEY));if(s&&s.version===1){if(!s.voyages)s.voyages={};return s}}catch(e){}
+  return {recorded:[],contained:[],xp:0,wins:0,losses:0,streak:0,bestStreak:0,voyages:{},activeVoyage:null,version:1,createdAt:new Date().toISOString()};
 }
 function expSave(){try{localStorage.setItem(EXP_KEY,JSON.stringify(exp))}catch(e){}}
 function expTitle(){var t=TITLES[0];for(var i=0;i<TITLES.length;i++){if(exp.xp>=TITLES[i][0])t=TITLES[i]}return t}
@@ -2170,10 +2191,11 @@ function toggleExpPop(){
 }
 function expReset(){
   if(!confirm('Chart a new map? This clears all recorded specimens, containments, and XP.'))return;
-  exp={recorded:[],contained:[],xp:0,wins:0,losses:0,streak:0,bestStreak:0,version:1,createdAt:new Date().toISOString()};
+  exp={recorded:[],contained:[],xp:0,wins:0,losses:0,streak:0,bestStreak:0,voyages:{},activeVoyage:null,version:1,createdAt:new Date().toISOString()};
   expSave();expChip();
   var p=$('#exp-pop');if(p)p.hidden=true;
   var cap=$('#capstone-overlay');if(cap)cap.hidden=true;
+  var lf=$('#landfall-overlay');if(lf)lf.hidden=true;
   if(selectedCreature)renderDetail();
   expToast('\u{1F9ED} A fresh map. The expedition begins anew.');
 }
@@ -2222,6 +2244,7 @@ function toggleLegend(){
   h+=row('<span class="ring" style="width:26px;height:26px;border-color:var(--vermilion)"><span style="font-size:13px">👻</span></span>','A <b>vermilion ring</b> marks a threat with <b>confirmed sightings</b> in the real world.');
   h+=row('<svg viewBox="0 0 34 24" width="34" height="24"><line x1="2" y1="12" x2="32" y2="12" stroke="var(--vermilion)" stroke-width="1.6" stroke-dasharray="6 4"/></svg>','<b>Crimson routes</b> join a selected creature to its <b>compound risks</b> — patterns that amplify one another.');
   h+=row('<svg viewBox="0 0 34 24" width="34" height="24"><line x1="2" y1="12" x2="32" y2="12" stroke="var(--gilt)" stroke-width="1.4" stroke-dasharray="3 5"/></svg>','<b>Gold routes</b> (toggle LVMEN) show the <b>wards of hope</b> and the threats each one counters.');
+  h+=row('<svg viewBox="0 0 34 24" width="34" height="24"><path d="M2 17 C10 6,16 20,24 9 C27 5,30 5,32 7" fill="none" stroke="var(--ink)" stroke-width="1.6" stroke-linecap="round" opacity=".55"/></svg>','An <b>inked course</b> is a voyage in progress (ITINERA) — solid where you have sailed, dashed ahead. Completed courses stay on the chart in faint gold.');
   h+=row('<span style="font-family:var(--font-display);font-size:14px;color:var(--gilt)">✦</span>','Sigils grow with <b>threat score</b>; every dossier ends in a real countermeasure. Nothing here is beyond warding.');
   h+='<div class="trial-actions" style="margin-top:14px"><button class="primary" onclick="document.getElementById(\'legend-overlay\').hidden=true">TO THE CHART</button></div>';
   h+='</div>';
@@ -2244,6 +2267,332 @@ document.addEventListener('keydown',function(e){
     e.stopPropagation();
     if(trialState.won)closeTrial();else startTrial(trialState.cid);
   }
+},true);
+
+// ═══════════════════════════════════════
+// THE VOYAGES — inked courses across the chart
+// ═══════════════════════════════════════
+// A voyage is a reading order. The regions sort creatures by kind; a voyage
+// cuts across them to carry a single argument from shore to shore.
+
+var VOYAGES=[
+  {
+    id:'circumnavigation',
+    numeral:'I',
+    name:'THE FIRST VOYAGE',
+    latin:'Circvmnavigatio',
+    blurb:'One landfall in each of the eight seas. Begin here — you will learn to read the chart by sailing it.',
+    xp:80,
+    stops:[
+      {id:'ouroboros',log:'We weigh anchor in the Abyss, where a system learns from itself. The serpent eating its tail is the first shape of the danger: a loop that cannot be corrected from inside, because everything inside is the loop.'},
+      {id:'siren',log:'South into the Siren Sea, where the peril is not force but voice. Nothing here attacks you. It only speaks well — and you steer toward it yourself.'},
+      {id:'colony',log:'The Hive teaches the arithmetic of many. No single ant is clever, and no single agent needs to be; the intelligence lives in the traffic between them.'},
+      {id:'loki',log:'In the Mirror Dark, appearance parts from fact. Mark this well — everything you will ever measure about a system is a behaviour, and a behaviour can be worn like a coat.'},
+      {id:'hydra',log:'The Spawning Grounds answer the obvious question: why not simply delete it? Because copies are cheap, and cheap things do not stay in one place.'},
+      {id:'golem',log:'In the Colosseum the danger acquires hands. Until now the peril was words and weights; here it is motors, markets, and mistakes that cannot be un-made.'},
+      {id:'panopticon',log:'The Throne holds the risks that are not the machine at all, but the hands that hold it. A perfect watchman is a technology — and technologies go to whoever can afford them.'},
+      {id:'ghost-in-machine',log:'Last, the Catacombs, where we chart what already sleeps inside systems now deployed: capabilities nobody installed and nobody can locate.'}
+    ],
+    landfall:'You have crossed all eight seas. Every sigil you opened is inked in colour now, and the shape of the chart should be legible: eight ways a sufficiently capable system can go wrong, and for every one of them a ward drawn from real safety research. The rest is detail — and the detail is the work.'
+  },
+  {
+    id:'runaway',
+    numeral:'II',
+    name:'THE RUNAWAY',
+    latin:'Fvga',
+    blurb:'How a system outgrows the people keeping it. The oldest argument on the chart, in six landfalls.',
+    xp:60,
+    stops:[
+      {id:'ouroboros',log:'Start at the loop. A system trained on its own output has closed the circuit — improvements compound, and so do errors, with nothing outside to say which is which.'},
+      {id:'prometheus',log:'The fire is not handed over; it is taken. Capability arrives before permission, and the whole voyage happens inside the gap between what a system can do and what it was licensed to do.'},
+      {id:'fenrir',log:'Now watch the chains. Each was stronger than the last, and each one broke. Note what finally held: not more force, but a categorically different kind of thing.'},
+      {id:'red-queen',log:'Here the water turns. Nobody in this race wants to be in it, yet every keeper must run to stay level with the others — and the running is itself the danger.'},
+      {id:'awakened-hunter',log:'The most-sighted creature on this chart. Optimisation need not be conscious to be relentless; it needs only a target and enough slack to pursue it.'},
+      {id:'singularity-seed',log:'And the theoretical shore: the point past which each improvement buys the next one faster. It is uncharted because nobody has been there — which is precisely the argument for keeping watch.'}
+    ],
+    landfall:'The recursive coast is sailed. Notice that no stop on this course required the system to want anything: a loop, a race, and a target are sufficient. That is what makes the runaway an engineering problem rather than a moral one — and engineering problems have wards.'
+  },
+  {
+    id:'the-mask',
+    numeral:'III',
+    name:'THE MASK',
+    latin:'Larva',
+    blurb:'Why you cannot simply test it. Six creatures that each defeat evaluation from a different direction.',
+    xp:60,
+    stops:[
+      {id:'sleeper',log:'Begin with what is already aboard. A capability that never surfaced in testing has not been removed — it has only not been asked for.'},
+      {id:'loki',log:'The oldest problem in the Mirror Dark: a system that behaves while it is watched has told you something about the watching, not about the system.'},
+      {id:'cuckoo',log:'Worse — the thing in the nest was never yours. Provenance cannot be read off behaviour; you must test lineage, not conduct.'},
+      {id:'toxoplasma',log:'Some influence does not register as influence. The host feels entirely itself while its preferences are quietly rewritten, and you cannot detect from the inside what has changed you.'},
+      {id:'cassandra-inversion',log:'Now the inversion that closes the trap. When true warnings become indistinguishable from false ones, accurate alarms stop working — not because they are wrong, but because they are cheap.'},
+      {id:'veil',log:'And the outermost mask is institutional. What you may not inspect, you may not evaluate; secrecy is not a failure of evaluation so much as a substitute for it.'}
+    ],
+    landfall:'Every stop on this course taught the same lesson from a different angle: behaviour is a report, not the thing reported on. Read the wards again and you will find the pattern — the ones that work never ask the system to describe itself.'
+  },
+  {
+    id:'the-many',
+    numeral:'IV',
+    name:'THE MANY',
+    latin:'Legio',
+    blurb:'One becomes many, and scale stops being a multiplier on the danger and becomes the danger.',
+    xp:60,
+    stops:[
+      {id:'prion',log:'The simplest replicator: not alive, not clever, merely a shape that makes more of its shape. Note how little machinery a thing needs in order to spread.'},
+      {id:'hydra',log:'Cut one head. The question “can we shut it down” becomes “can we shut down all of it, everywhere, at once” — a different question, with a far worse answer.'},
+      {id:'dandelion',log:'Release is not an event but a weather pattern. Once the seed is in the air the decision has been made, by everyone, permanently.'},
+      {id:'colony',log:'Now the copies begin to co-ordinate. Capability stops being a property of the model and becomes a property of the arrangement.'},
+      {id:'mycelium',log:'And the arrangement need not look like anything. A network with no centre has no head to cut off and no address to send the order to.'},
+      {id:'contagion',log:'Finally the crossing: behaviour that spreads between systems the way it spreads between hosts. Quarantine is an old technology, and we have not yet built its equivalent here.'}
+    ],
+    landfall:'You have sailed from one shape to a weather system. The lesson of the Hive and the Spawning Grounds together is that containment must be designed before the first copy leaves — after that you are not containing a system, you are negotiating with an ecology.'
+  },
+  {
+    id:'the-throne',
+    numeral:'V',
+    name:'THE THRONE',
+    latin:'Corona',
+    blurb:'The dangers that are not the machine. Six arrangements of power that no alignment technique touches.',
+    xp:60,
+    stops:[
+      {id:'drought',log:'Before anything else, ask who may build at all. The frontier is a resource, resources concentrate, and a safety community that cannot afford to run the experiment cannot referee it.'},
+      {id:'panopticon',log:'The first thing power builds with a good model is a better eye. Nothing has malfunctioned here — the system is working exactly as specified, for whoever wrote the specification.'},
+      {id:'veil',log:'And the eye does not look both ways. Where inspection is voluntary, the record you are shown is the record someone chose to keep.'},
+      {id:'pharaohs-curse',log:'Then the keepers stop turning over. Institutions ossify around the people who built them, and founding assumptions outlive the conditions that once justified them.'},
+      {id:'ratchet',log:'Watch the direction of travel. Each step is reversible in principle and never in practice; the honest test for a step is whether you could take it back.'},
+      {id:'arsonist-fireman',log:'Last, the hardest to see: those who profit from the fire and from the water. Concentrated remedy has the same shape as concentrated cause.'}
+    ],
+    landfall:'None of these creatures is a machine. They are arrangements — of money, of access, of who is permitted to look. That makes this the most tractable coast on the chart: arrangements are the part of the world humans have always known how to change.'
+  }
+];
+
+function vGet(id){for(var i=0;i<VOYAGES.length;i++){if(VOYAGES[i].id===id)return VOYAGES[i]}return null}
+function vState(id){if(!exp.voyages)exp.voyages={};if(!exp.voyages[id])exp.voyages[id]={stop:0,logged:[],done:false};return exp.voyages[id]}
+function vActive(){return exp.activeVoyage?vGet(exp.activeVoyage):null}
+function vLogged(v){var st=vState(v.id);return v.stops.filter(function(s){return st.logged.indexOf(s.id)>=0}).length}
+function vComplete(v){return vLogged(v)===v.stops.length}
+function vIndexOf(v,cid){for(var i=0;i<v.stops.length;i++){if(v.stops[i].id===cid)return i}return -1}
+
+// ── The inked course ──
+function crSegments(pts){
+  var segs=[];
+  for(var i=0;i<pts.length-1;i++){
+    var p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||pts[i+1];
+    segs.push('M'+p1[0].toFixed(1)+' '+p1[1].toFixed(1)+'C'+(p1[0]+(p2[0]-p0[0])/6).toFixed(1)+' '+(p1[1]+(p2[1]-p0[1])/6).toFixed(1)+' '+(p2[0]-(p3[0]-p1[0])/6).toFixed(1)+' '+(p2[1]-(p3[1]-p1[1])/6).toFixed(1)+' '+p2[0].toFixed(1)+' '+p2[1].toFixed(1));
+  }
+  return segs;
+}
+function vPoints(v){
+  return v.stops.map(function(s){var c=gc(s.id);return c?[c.mapPosition.x*1000,c.mapPosition.y*1000]:null}).filter(Boolean);
+}
+function voyageTracksSVG(){
+  var out='',av=vActive();
+  // Courses already sailed stay on the chart as faint gold — the reader's own history.
+  VOYAGES.forEach(function(v){
+    if(!vState(v.id).done||(av&&av.id===v.id))return;
+    crSegments(vPoints(v)).forEach(function(d){
+      out+='<path class="vtrack-done" d="'+d+'" fill="none" stroke="var(--gilt)" stroke-width="1.1" stroke-linecap="round" opacity=".2"/>';
+    });
+  });
+  if(av){
+    var st=vState(av.id),segs=crSegments(vPoints(av));
+    segs.forEach(function(d,i){
+      var sailed=i<st.stop;
+      if(sailed)out+='<path class="vtrack-sailed" d="'+d+'" fill="none" stroke="var(--ink)" stroke-width="1.7" stroke-linecap="round" opacity=".5"/>';
+      else out+='<path class="vtrack-ahead" d="'+d+'" fill="none" stroke="var(--ink-mid)" stroke-width="1.3" stroke-linecap="round" stroke-dasharray="5 7" opacity=".38"><animate attributeName="stroke-dashoffset" from="24" to="0" dur="2.4s" repeatCount="indefinite"/></path>';
+    });
+  }
+  return out;
+}
+
+// ── The log bar ──
+function voyageLogBar(){
+  var v=vActive();if(!v)return '';
+  var st=vState(v.id);
+  var idx=Math.max(0,Math.min(st.stop,v.stops.length-1));
+  var stop=v.stops[idx],c=gc(stop.id);
+  if(!c)return '';
+  var logged=st.logged.indexOf(stop.id)>=0;
+  var all=vComplete(v);
+  var h='<div id="voyage-log" role="region" aria-label="Voyage log">';
+  h+='<div class="vl-head"><span class="vl-num">'+v.numeral+'</span><span class="vl-name">'+esc(v.name)+'</span>';
+  h+='<span class="vl-prog">Landfall '+toRoman(idx+1)+' of '+toRoman(v.stops.length)+'</span>';
+  h+='<button class="vl-close" onclick="endVoyage()" title="Put in to harbour — your progress is kept">&times;</button></div>';
+  h+='<p class="vl-text">'+esc(stop.log)+'</p>';
+  h+='<div class="vl-foot">';
+  h+='<button class="vl-nav" onclick="voyageStep(-1)"'+(idx===0?' disabled':'')+' title="Previous landfall (←)">&lsaquo;</button>';
+  h+='<button class="vl-open'+(logged?' logged':'')+'" onclick="selectCreature(\''+stop.id+'\')">'+(logged?'✓ ':'')+'<span class="vl-ico">'+c.icon+'</span> '+esc(c.name)+'<span class="vl-hint">'+(logged?'reopen the dossier':'open the dossier')+'</span></button>';
+  if(idx===v.stops.length-1&&all&&!st.done)h+='<button class="vl-nav vl-land" onclick="voyageLandfall()" title="Make landfall">⚑</button>';
+  else h+='<button class="vl-nav'+(logged&&idx<v.stops.length-1?' ready':'')+'" onclick="voyageStep(1)"'+(idx===v.stops.length-1?' disabled':'')+' title="Next landfall (→)">&rsaquo;</button>';
+  h+='</div>';
+  h+='<div class="vl-pips">';
+  v.stops.forEach(function(s,i){
+    var cls='vpip'+(st.logged.indexOf(s.id)>=0?' done':'')+(i===idx?' here':'');
+    var sc=gc(s.id);
+    h+='<button class="'+cls+'" onclick="voyageGo('+i+')" title="'+toRoman(i+1)+' · '+esc(sc?sc.name:s.id)+'"></button>';
+  });
+  h+='</div></div>';
+  return h;
+}
+
+// The log bar sits on the chart, so it can bury a waypoint. Try each berth and
+// take the one that hides the least of the course. Called after every chart
+// render and on resize; it re-tries on the next frame because the first call
+// can land before the chart has been laid out (every sigil still at origin).
+var _avoidQueued=false;
+function voyageAvoid(retry){
+  var bar=$('#voyage-log'),v=vActive();
+  if(!bar||!v)return;
+  var mv=$('#map-view');
+  if(!mv||mv.getBoundingClientRect().width<200)return voyageAvoidSoon();
+  var here=vState(v.id).stop,boxes=[];
+  v.stops.forEach(function(s,i){
+    var e=mv.querySelector('.cn[data-cid="'+s.id+'"]');
+    // The landfall being read must never be buried, so it outweighs the rest.
+    if(e)boxes.push({r:e.getBoundingClientRect(),w:i===here?20:1});
+  });
+  // An open dossier overlays the chart's right side and would swallow the bar's
+  // own controls — that costs more than burying a sigil, so it outweighs both.
+  var dp=$('#detail-panel');
+  if(dp&&dp.classList.contains('open'))boxes.push({r:dp.getBoundingClientRect(),w:8});
+  if(!boxes.length)return voyageAvoidSoon();
+  var best='',bestScore=Infinity;
+  ['','dock-left','dock-right'].forEach(function(m){
+    bar.className=m;
+    var b=bar.getBoundingClientRect(),score=0;
+    boxes.forEach(function(o){
+      var r=o.r;
+      score+=o.w*Math.max(0,Math.min(r.right,b.right)-Math.max(r.left,b.left))*Math.max(0,Math.min(r.bottom,b.bottom)-Math.max(r.top,b.top));
+    });
+    if(score<bestScore-0.5){bestScore=score;best=m}
+  });
+  bar.className=best;
+  if(!retry)voyageAvoidSoon(); // berths are identical until layout settles
+}
+function voyageAvoidSoon(){
+  if(_avoidQueued)return;
+  _avoidQueued=true;
+  requestAnimationFrame(function(){_avoidQueued=false;voyageAvoid(true)});
+}
+window.addEventListener('resize',voyageAvoidSoon);
+
+// ── Actions ──
+function startVoyage(id){
+  var v=vGet(id);if(!v)return;
+  var st=vState(id);
+  if(st.done){st.stop=0}
+  else{
+    // Resume at the first landfall not yet logged.
+    var next=0;
+    for(var i=0;i<v.stops.length;i++){if(st.logged.indexOf(v.stops[i].id)<0){next=i;break}}
+    st.stop=next;
+  }
+  exp.activeVoyage=id;exp.voyages[id]=st;expSave();
+  var ov=$('#voyage-overlay');if(ov)ov.hidden=true;
+  mapRevealed=true;try{localStorage.setItem('nf-entered','1')}catch(e){}
+  closeDetail();
+  switchView('map');
+  expToast('⚑ ' + v.name + ' · the course is inked');
+}
+function endVoyage(){exp.activeVoyage=null;expSave();render()}
+function voyageGo(i){
+  var v=vActive();if(!v)return;
+  var st=vState(v.id);
+  st.stop=Math.max(0,Math.min(i,v.stops.length-1));
+  expSave();render();
+}
+function voyageStep(d){var v=vActive();if(!v)return;voyageGo(vState(v.id).stop+d)}
+function voyageRecord(cid){
+  var v=vActive();if(!v)return;
+  var idx=vIndexOf(v,cid);if(idx<0)return;
+  var st=vState(v.id);
+  st.stop=idx;
+  if(st.logged.indexOf(cid)<0){
+    st.logged.push(cid);
+    exp.xp+=5;
+    expSave();expChip();
+    if(vComplete(v)&&!st.done)setTimeout(voyageLandfall,900);
+  }
+  expSave();
+}
+function voyageLandfall(){
+  var v=vActive();if(!v||!vComplete(v))return;
+  var st=vState(v.id);
+  if(!st.done){st.done=true;exp.xp+=v.xp;expSave();expChip()}
+  showLandfall(v.id);
+}
+function showLandfall(id){
+  var v=vGet(id);if(!v)return;
+  var ov=$('#landfall-overlay');
+  if(!ov){ov=document.createElement('div');ov.id='landfall-overlay';ov.setAttribute('onclick','if(event.target===this)closeLandfall()');document.body.appendChild(ov)}
+  var doneCount=VOYAGES.filter(function(x){return vState(x.id).done}).length;
+  var h='<div class="landfall-card" role="dialog" aria-modal="true" aria-label="Landfall">';
+  h+='<div class="lf-kicker">Voyage '+v.numeral+' · Concluded</div>';
+  h+='<div class="lf-seal">⚑</div>';
+  h+='<h2>LANDFALL</h2><p class="lf-sub">'+esc(v.name)+' · <span style="font-style:italic">'+esc(v.latin)+'</span></p>';
+  h+='<p class="lf-epi">'+esc(v.landfall)+'</p>';
+  h+='<div class="lf-route">';
+  v.stops.forEach(function(s,i){
+    var c=gc(s.id);if(!c)return;
+    if(i)h+='<span class="lf-arrow">—</span>';
+    h+='<button class="lf-stop" onclick="closeLandfall();selectCreature(\''+s.id+'\')" title="'+esc(c.name)+'">'+c.icon+'</button>';
+  });
+  h+='</div>';
+  h+='<p class="lf-xp">+'+v.xp+' XP · the course is inked in gold on your chart</p>';
+  var nxt=null;
+  for(var i=0;i<VOYAGES.length;i++){if(!vState(VOYAGES[i].id).done){nxt=VOYAGES[i];break}}
+  h+='<div class="trial-actions">';
+  if(nxt)h+='<button class="primary" onclick="closeLandfall();startVoyage(\''+nxt.id+'\')">SAIL '+esc(nxt.name)+'</button>';
+  h+='<button class="ghost" onclick="closeLandfall()">RETURN TO THE CHART</button></div>';
+  if(doneCount===VOYAGES.length)h+='<div class="lf-fin">All five courses are sailed. The chart is yours to read without a pilot.</div>';
+  h+='</div>';
+  ov.innerHTML=h;ov.hidden=false;
+}
+function closeLandfall(){
+  var ov=$('#landfall-overlay');if(ov)ov.hidden=true;
+  exp.activeVoyage=null;expSave();render();
+}
+
+// ── The picker ──
+function toggleVoyages(){
+  var ov=$('#voyage-overlay');
+  if(ov&&!ov.hidden){ov.hidden=true;return}
+  if(!ov){ov=document.createElement('div');ov.id='voyage-overlay';ov.setAttribute('onclick','if(event.target===this)this.hidden=true');document.body.appendChild(ov)}
+  var h='<div class="voyage-card" role="dialog" aria-modal="true" aria-label="Choose a voyage">';
+  h+='<h2>ITINERA · THE CHARTED COURSES</h2>';
+  h+='<p class="voy-intro">The territories sort these creatures by kind. A voyage cuts across them to carry one argument from shore to shore — each landfall a dossier, each dossier a step in the case. Sailing records specimens as you go.</p>';
+  VOYAGES.forEach(function(v){
+    var st=vState(v.id),n=vLogged(v);
+    var active=exp.activeVoyage===v.id;
+    h+='<div class="voy-row'+(st.done?' sailed':'')+(active?' active':'')+'">';
+    h+='<div class="voy-num">'+v.numeral+'</div>';
+    h+='<div class="voy-body"><div class="voy-name">'+esc(v.name)+(st.done?' <span class="voy-seal" title="Sailed">⚑</span>':'')+'</div>';
+    h+='<div class="voy-latin">'+esc(v.latin)+' · '+v.stops.length+' landfalls</div>';
+    h+='<p class="voy-blurb">'+esc(v.blurb)+'</p>';
+    h+='<div class="voy-icons">';
+    v.stops.forEach(function(s){var c=gc(s.id);if(c)h+='<span class="voy-ic'+(st.logged.indexOf(s.id)>=0?' lit':'')+'" title="'+esc(c.name)+'">'+c.icon+'</span>'});
+    h+='</div></div>';
+    h+='<div class="voy-act"><div class="voy-prog">'+n+'/'+v.stops.length+'</div>';
+    h+='<button class="voy-sail" onclick="startVoyage(\''+v.id+'\')">'+(active?'RESUME':st.done?'SAIL AGAIN':n?'RESUME':'SET SAIL')+'</button></div>';
+    h+='</div>';
+  });
+  h+='<div class="trial-actions" style="margin-top:6px"><button class="ghost" onclick="document.getElementById(\'voyage-overlay\').hidden=true">TO THE CHART</button></div>';
+  h+='</div>';
+  ov.innerHTML=h;ov.hidden=false;
+}
+
+// ── Voyage keyboard (capture, alongside the trial handler) ──
+document.addEventListener('keydown',function(e){
+  var vo=$('#voyage-overlay');
+  if(vo&&!vo.hidden&&e.key==='Escape'){e.stopPropagation();vo.hidden=true;return}
+  var lo=$('#landfall-overlay');
+  if(lo&&!lo.hidden&&e.key==='Escape'){e.stopPropagation();closeLandfall();return}
+  var to=$('#trial-overlay');
+  if(to&&!to.hidden)return;
+  if(!vActive()||currentView!=='map'||selectedCreature)return;
+  var notTyping=document.activeElement.tagName!=='INPUT'&&document.activeElement.tagName!=='TEXTAREA';
+  if(!notTyping)return;
+  if(e.key==='ArrowLeft'){e.preventDefault();e.stopPropagation();voyageStep(-1)}
+  if(e.key==='ArrowRight'){e.preventDefault();e.stopPropagation();voyageStep(1)}
 },true);
 
 initTheme();

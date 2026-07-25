@@ -8,6 +8,7 @@ import { getCompoundsForCreature } from "@/data";
 import { usePlayerProgress } from "@/lib/PlayerProgressContext";
 import type { BattleOption, BattleResult } from "@/lib/game-types";
 import { MOVE_TYPE_META } from "@/lib/game-types";
+import { audio } from "@/lib/audio";
 
 interface ContainmentBattleProps {
   creature: Creature;
@@ -59,8 +60,12 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
     const newTitle = getTitle(currentXP + xpEarned);
 
     if (won) {
+      audio.sfx("correct");
+      setTimeout(() => audio.sfx(newTitle.title !== oldTitle.title ? "levelUp" : "victory"), 420);
       containCreature(creature, xpMultiplier);
     } else {
+      audio.sfx("wrong");
+      setTimeout(() => audio.sfx("defeat"), 380);
       recordBattleLoss();
       setShaking(true);
       setTimeout(() => setShaking(false), 500);
@@ -92,6 +97,9 @@ export default function ContainmentBattle({ creature, viewMode, onClose }: Conta
       setSelectedIndex(index);
       setExpandedInfo(null);
       setRevealPhase(true);
+      audio.sfx("attack");
+      // The hit lands at the end of the dramatic pause, not at the click.
+      setTimeout(() => audio.sfx("hit"), 620);
 
       // Dramatic reveal pause
       setTimeout(() => {

@@ -1,0 +1,59 @@
+name: Deploy to GitHub Pages
+
+# Builds the static export and publishes it. Enable once under
+# Settings → Pages → Source: GitHub Actions, then every push to the default
+# branch republishes the site.
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deploy finish rather than cancelling it mid-publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Project pages are served from /<repo>, so the app needs to know its
+      # base path. A user/org page (<user>.github.io) serves from the root and
+      # needs no base path — drop NF_BASE_PATH in that case.
+      - name: Build static export
+        run: npm run build
+        env:
+          NF_BASE_PATH: /${{ github.event.repository.name }}
+
+      # GitHub Pages serves _next/ as a Jekyll source dir unless told not to.
+      - run: touch out/.nojekyll
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
