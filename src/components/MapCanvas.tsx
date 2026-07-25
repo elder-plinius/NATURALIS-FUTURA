@@ -4,6 +4,9 @@ import { useEffect, useRef, useMemo, useState } from "react";
 import { regions, allCreatures, hopeCreatures, getCreaturesByRegion } from "@/data";
 import type { Creature, Region } from "@/data";
 import type { Direction } from "@/lib/usePlayerSprite";
+import AtmosphereLayer from "@/components/AtmosphereLayer";
+import { audio, type RegionId } from "@/lib/audio";
+import { useSettings } from "@/lib/settings";
 
 // ── World configuration ──
 const WORLD_SCALE = 9;
@@ -662,6 +665,11 @@ export default function MapCanvas({
   const [viewport, setViewport] = useState({ w: 1, h: 1 });
   const [regionBanner, setRegionBanner] = useState<Region | null>(null);
   const currentRegionRef = useRef<string | null>(null);
+  // The territory the player currently stands in — drives the ambient bed and
+  // the colour of the haze. Kept in state (not just the ref above) because the
+  // atmosphere layer needs to re-tint when it changes.
+  const [activeRegion, setActiveRegion] = useState<Region | null>(null);
+  const gfx = useSettings();
   const footprints = useRef<{x: number; y: number}[]>([]);
   const lastFootprint = useRef({x: playerX, y: playerY});
 
@@ -781,8 +789,21 @@ export default function MapCanvas({
         setTimeout(() => setRegionBanner(null), 3000);
       }
       currentRegionRef.current = region.id;
+      setActiveRegion(region);
+      // Each territory has its own voice; crossing a border crossfades to it.
+      audio.setRegion(region.id as RegionId);
+    } else if (!region && currentRegionRef.current === null) {
+      // The player spawns in a passage between territories. Without this the
+      // dungeon would be silent until the first border crossing.
+      audio.setRegion("corridor");
     }
   }, [playerX, playerY, mapRevealed]);
+
+  // ── Footsteps ──
+  // The audio engine rate-limits these, so firing on every movement tick is fine.
+  useEffect(() => {
+    if (playerMoving && mapRevealed) audio.step();
+  }, [playerX, playerY, playerMoving, mapRevealed]);
 
   return (
     <div ref={containerRef} className="dark-surface relative w-full h-full overflow-hidden bg-[#0e0c0a]">
@@ -898,29 +919,18 @@ export default function MapCanvas({
       {/* ── VIEWPORT-FIXED OVERLAYS ──             */}
       {/* ══════════════════════════════════════════ */}
 
-      {/* Torchlight effect — radial gradient tracking the PLAYER, not the
-          viewport center (the camera clamps at world edges) */}
+      {/* Torchlight, embers, dust and haze. Replaces the pair of CSS radial
+          gradients that used to live here — the canvas can put particles
+          *inside* the light pool and grade them by distance to the flame,
+          which is what actually reads as a lit space. The torch tracks the
+          PLAYER, not the viewport centre (the camera clamps at world edges). */}
       {mapRevealed && (
-        <div className="absolute inset-0 pointer-events-none z-20 animate-[torch-flicker_4s_ease-in-out_infinite]" style={{
-          background: `radial-gradient(ellipse 45% 50% at ${camera.torchX}% ${camera.torchY}%,
-            transparent 0%,
-            rgba(0,0,0,0.05) 30%,
-            rgba(0,0,0,0.25) 50%,
-            rgba(0,0,0,0.55) 65%,
-            rgba(0,0,0,0.80) 80%,
-            rgba(0,0,0,0.92) 100%
-          )`,
-        }} />
-      )}
-
-      {/* Warm vignette inner glow — follows the torch */}
-      {mapRevealed && (
-        <div className="absolute inset-0 pointer-events-none z-20" style={{
-          background: `radial-gradient(ellipse 35% 40% at ${camera.torchX}% ${camera.torchY}%,
-            rgba(255, 180, 80, 0.06) 0%,
-            transparent 100%
-          )`,
-        }} />
+        <AtmosphereLayer
+          torchX={camera.torchX}
+          torchY={camera.torchY}
+          tint={activeRegion?.color.accent ?? "#b08a3e"}
+          quality={gfx.quality}
+        />
       )}
 
       {/* Fog overlay — fades out on map reveal */}

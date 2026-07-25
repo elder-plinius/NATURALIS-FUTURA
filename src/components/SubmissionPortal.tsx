@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { RegionId, ThreatClass } from "@/data";
 import type { ThreatSubmission } from "@/data/dashboard-types";
 import { sampleSubmissions } from "@/data/signals";
+import { validateSubmission } from "@/lib/validate-submission";
 
 interface SubmissionPortalProps {
   onSubmit: (submission: ThreatSubmission) => void;
@@ -49,9 +50,19 @@ export default function SubmissionPortal({ onSubmit }: SubmissionPortalProps) {
   const [impact, setImpact] = useState(3);
   const [handle, setHandle] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const problem = validateSubmission({
+      proposedName: name,
+      description,
+      suggestedRegion: region,
+      estimatedLikelihood: likelihood,
+      estimatedImpact: impact,
+    });
+    if (problem) { setError(problem); return; }
+    setError(null);
     const submission: ThreatSubmission = {
       id: `sub-${Date.now()}`,
       timestamp: new Date().toISOString(),
@@ -247,6 +258,12 @@ export default function SubmissionPortal({ onSubmit }: SubmissionPortalProps) {
                   className="mt-1 w-full px-3 py-2 rounded-lg border border-ink/15 bg-parchment text-sm text-ink placeholder:text-ink-light/50 focus:outline-none focus:ring-1 focus:ring-abyss-accent"
                 />
               </div>
+
+              {error && (
+                <p role="alert" className="rounded-lg border border-red-900/30 bg-red-900/5 px-3 py-2 text-xs text-red-900">
+                  {error}
+                </p>
+              )}
 
               <button
                 type="submit"

@@ -18,6 +18,9 @@ import {
   GlyphProgress, GlyphSearch, GlyphCandleLit, GlyphCandleOut, GlyphHelp,
 } from "@/components/InkGlyphs";
 import { PlayerProgressProvider, usePlayerProgress } from "@/lib/PlayerProgressContext";
+import PauseMenu from "@/components/PauseMenu";
+import { audio } from "@/lib/audio";
+import { useScreenShake } from "@/lib/useScreenShake";
 import { usePlayerSprite } from "@/lib/usePlayerSprite";
 import { isBlockedAt } from "@/components/MapCanvas";
 import type { Creature, ViewMode } from "@/data";
@@ -40,6 +43,8 @@ function AppContent() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [masteryToast, setMasteryToast] = useState<string | null>(null);
   const [showVictory, setShowVictory] = useState(false);
+  const [showPause, setShowPause] = useState(false);
+  const shake = useScreenShake();
   const prevMasteredRef = useRef<Set<string> | null>(null);
   const prevCompleteRef = useRef<boolean | null>(null);
   const pendingVictoryRef = useRef(false);
@@ -66,9 +71,11 @@ function AppContent() {
     if (creature) {
       const isNew = discoverCreature(creature.id);
       if (isNew) {
+        audio.sfx("discover");
         setDiscoveryCreature(creature);
         return; // Let discovery animation play first, then open panel
       }
+      audio.sfx("open");
     }
     setSelectedCreature(creature);
     if (creature && activeView !== "map") {
@@ -94,6 +101,9 @@ function AppContent() {
   }, [discoveryCreature]);
 
   const handleRevealMap = useCallback(() => {
+    // The first click into the dungeon is also the gesture that lets the
+    // browser start an AudioContext.
+    audio.unlock();
     setMapRevealed(true);
     try {
       if (!localStorage.getItem("naturalis-futura-tutorial-seen")) {
@@ -104,6 +114,7 @@ function AppContent() {
   }, []);
 
   const handleChallenge = useCallback((creature: Creature) => {
+    audio.sfx("encounter");
     setBattleCreature(creature);
   }, []);
 
@@ -113,7 +124,9 @@ function AppContent() {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       if (e.key === "Escape") {
-        if (showVictory) {
+        if (showPause) {
+          setShowPause(false);
+        } else if (showVictory) {
           setShowVictory(false);
         } else if (showShortcuts) {
           setShowShortcuts(false);
@@ -125,6 +138,9 @@ function AppContent() {
           setShowSearch(false);
         } else if (selectedCreature) {
           setSelectedCreature(null);
+        } else if (mapRevealed) {
+          // Nothing else is open — Escape is the pause key.
+          setShowPause(true);
         }
       }
       if (e.key === "?" && !showSearch && !battleCreature && !showShortcuts && !showVictory) {
@@ -138,7 +154,20 @@ function AppContent() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showSearch, selectedCreature, battleCreature, showTutorial, showShortcuts, showVictory]);
+  }, [showSearch, selectedCreature, battleCreature, showTutorial, showShortcuts, showVictory, showPause, mapRevealed]);
+
+  // Browsers only allow an AudioContext to start from a real user gesture, and
+  // the player may reach the world by keyboard rather than by clicking through
+  // the frontispiece — so listen for either, once.
+  useEffect(() => {
+    const unlock = () => audio.unlock();
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, []);
 
   // Detect new region mastery for celebration toast
   useEffect(() => {
@@ -151,6 +180,8 @@ function AppContent() {
         if (!prevMasteredRef.current.has(regionId)) {
           const region = regions.find((r) => r.id === regionId);
           if (region) {
+            audio.sfx("mastery");
+            shake.fire(0.55);
             setMasteryToast(region.name);
             setTimeout(() => setMasteryToast(null), 4000);
           }
@@ -182,6 +213,7 @@ function AppContent() {
   useEffect(() => {
     if (pendingVictoryRef.current && !battleCreature) {
       pendingVictoryRef.current = false;
+      audio.sfx("capstone");
       setShowVictory(true);
     }
   }, [battleCreature, containmentCount]);
@@ -194,7 +226,10 @@ function AppContent() {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-parchment">
+    <div
+      className="h-screen flex flex-col overflow-hidden bg-parchment"
+      style={{ transform: shake.transform, willChange: shake.transform === "none" ? undefined : "transform" }}
+    >
       {/* Player HUD */}
       {mapRevealed && <PlayerHUD />}
 
@@ -548,6 +583,8 @@ function AppContent() {
 
       {/* Endgame capstone — The Complete Map */}
       {showVictory && <VictoryScreen onClose={() => setShowVictory(false)} />}
+
+      {showPause && <PauseMenu onClose={() => setShowPause(false)} />}
     </div>
   );
 }
