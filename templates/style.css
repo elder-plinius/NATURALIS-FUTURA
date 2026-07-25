@@ -843,3 +843,102 @@ body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
 .leg-swatch{flex:0 0 40px;display:flex;align-items:center;justify-content:center}
 .leg-text{font-size:12.5px;line-height:1.6;color:var(--ink)}
 .leg-text b{font-family:var(--font-display);font-size:11px;letter-spacing:0.06em}
+
+/* ═══ ITINERA — the charted courses ═══ */
+#voyage-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:6}
+#map-view.voyaging .cn:not(.on-course){opacity:.3;transition:opacity .35s}
+#map-view.voyaging .cn:not(.on-course):hover{opacity:1}
+.cn .vnum{position:absolute;top:-5px;left:-7px;display:none;place-items:center;width:15px;height:15px;border-radius:50%;background:var(--parchment);border:1px solid var(--ink);font-family:var(--font-display);font-size:7px;letter-spacing:0;color:var(--ink);line-height:1}
+.cn.on-course .vnum{display:grid}
+.cn.on-course .ring{border-color:var(--ink);box-shadow:0 0 0 2.5px var(--parchment),0 0 0 3.5px var(--ink-mid)}
+.cn.course-logged .vnum{background:var(--ink);color:var(--parchment)}
+.cn.course-here{z-index:16}
+.cn.course-here .ring{border-color:var(--gilt);border-width:2px;box-shadow:0 0 0 2.5px var(--parchment),0 0 0 4px var(--gilt),0 0 14px -2px var(--gilt)}
+.cn.course-here .vnum{background:var(--gilt);border-color:var(--gilt);color:var(--parchment)}
+.cn.course-here .ci{filter:none}
+.cn.on-course .cl{opacity:.9}
+
+#chart-suggest.sug-voyage{border-color:var(--gilt);box-shadow:0 0 0 3px var(--parchment),0 0 0 3.75px var(--gilt),var(--shadow-md)}
+#chart-suggest.sug-voyage .sug-act{color:var(--gilt)}
+
+#voyage-log{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:14;width:min(560px,calc(100% - 36px));background:var(--parchment);border:1.5px solid var(--ink);box-shadow:0 0 0 3px var(--parchment),0 0 0 3.75px var(--ink-mid),var(--shadow-lg);padding:11px 15px 9px;animation:vl-fade .28s ease-out}
+@keyframes vl-fade{from{opacity:0}to{opacity:1}}
+/* Alternate berths, chosen at render time to bury the fewest waypoints. */
+#voyage-log.dock-left{left:148px;transform:none}
+#voyage-log.dock-right{left:auto;right:20px;transform:none}
+@media(max-width:900px){#voyage-log.dock-left,#voyage-log.dock-right{left:50%;right:auto;transform:translateX(-50%)}}
+.vl-head{display:flex;align-items:center;gap:9px;padding-bottom:6px;border-bottom:1px solid var(--grid-line)}
+.vl-num{font-family:var(--font-display);font-size:14px;color:var(--gilt);letter-spacing:0.06em}
+.vl-name{font-family:var(--font-display);font-size:11px;letter-spacing:0.2em;color:var(--ink);text-transform:uppercase}
+.vl-prog{margin-left:auto;font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;color:var(--ink-light);text-transform:uppercase}
+.vl-close{font-size:17px;line-height:1;color:var(--ink-faint);padding:0 2px;transition:color .2s}
+.vl-close:hover{color:var(--vermilion)}
+.vl-text{font-size:12.5px;line-height:1.62;color:var(--ink);margin:8px 0 10px;font-style:italic}
+.vl-foot{display:flex;align-items:stretch;gap:7px}
+.vl-nav{flex:0 0 34px;border:1px solid var(--border-strong);color:var(--ink-light);font-size:16px;line-height:1;border-radius:2px;transition:all .2s}
+.vl-nav:hover:not(:disabled){background:var(--hover-bg);color:var(--ink)}
+.vl-nav:disabled{opacity:.3;cursor:default}
+.vl-nav.ready{border-color:var(--gilt);color:var(--gilt)}
+.vl-nav.vl-land{border-color:var(--gilt);background:var(--gilt);color:var(--parchment);font-size:14px;animation:vl-beacon 1.8s ease-in-out infinite}
+@keyframes vl-beacon{0%,100%{box-shadow:0 0 0 0 rgba(169,127,22,0.5)}50%{box-shadow:0 0 0 6px rgba(169,127,22,0)}}
+.vl-open{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 10px;border:1px solid var(--ink);background:var(--parchment-dark);font-family:var(--font-display);font-size:11px;letter-spacing:0.13em;color:var(--ink);text-transform:uppercase;border-radius:2px;transition:all .2s}
+.vl-open:hover{background:var(--ink);color:var(--parchment)}
+.vl-open:hover .vl-hint{color:var(--parchment);opacity:.65}
+.vl-open.logged{border-color:var(--border-strong);color:var(--ink-light)}
+.vl-open .vl-ico{font-size:15px;line-height:1}
+.vl-hint{font-family:var(--font-mono);font-size:8.5px;letter-spacing:0.08em;color:var(--ink-light);text-transform:uppercase;opacity:.8}
+.vl-pips{display:flex;justify-content:center;gap:6px;margin-top:9px}
+.vpip{width:7px;height:7px;border-radius:50%;border:1px solid var(--ink-mid);background:transparent;transition:all .2s}
+.vpip:hover{transform:scale(1.35)}
+.vpip.done{background:var(--ink);border-color:var(--ink)}
+.vpip.here{border-color:var(--gilt);box-shadow:0 0 0 2px var(--parchment),0 0 0 3px var(--gilt)}
+.vpip.here.done{background:var(--gilt)}
+@media(max-width:768px){
+  #voyage-log{bottom:10px;padding:9px 12px 7px}
+  .vl-text{font-size:11.5px;margin:6px 0 8px}
+  .vl-hint{display:none}
+  .vl-open{font-size:9.5px;letter-spacing:0.08em}
+}
+
+#voyage-overlay{position:fixed;inset:0;z-index:95;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--overlay-bg)}
+#voyage-overlay[hidden]{display:none}
+.voyage-card{width:100%;max-width:620px;max-height:90vh;overflow-y:auto;border-radius:3px;background:var(--parchment-card-bg);border:1.5px solid var(--ink);box-shadow:0 0 0 4px var(--parchment),0 0 0 4.75px var(--ink-mid),var(--shadow-lg);padding:24px 26px;animation:trial-rise .3s cubic-bezier(0.34,1.56,0.64,1)}
+.voyage-card h2{font-family:var(--font-display);font-size:12px;letter-spacing:0.24em;margin-bottom:10px;text-align:center}
+.voy-intro{font-size:12px;line-height:1.65;color:var(--ink-light);font-style:italic;text-align:center;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--grid-line)}
+.voy-row{display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--grid-line)}
+.voy-row:last-of-type{border-bottom:none}
+.voy-row.active{background:var(--hover-bg);margin:0 -12px;padding:12px;border-radius:2px}
+.voy-num{flex:0 0 30px;font-family:var(--font-display);font-size:20px;color:var(--ink-faint);text-align:center;line-height:1.1}
+.voy-row.sailed .voy-num{color:var(--gilt)}
+.voy-body{flex:1;min-width:0}
+.voy-name{font-family:var(--font-display);font-size:13px;letter-spacing:0.16em;color:var(--ink)}
+.voy-seal{color:var(--gilt);font-size:11px}
+.voy-latin{font-family:var(--font-mono);font-size:9px;letter-spacing:0.14em;color:var(--ink-light);text-transform:uppercase;margin-top:2px}
+.voy-blurb{font-size:12px;line-height:1.55;color:var(--ink-light);margin-top:6px}
+.voy-icons{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+.voy-ic{font-size:14px;line-height:1;filter:grayscale(1) opacity(.4)}
+.voy-ic.lit{filter:none}
+.voy-act{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:6px}
+.voy-prog{font-family:var(--font-mono);font-size:10px;color:var(--ink-light)}
+.voy-sail{padding:6px 12px;border:1px solid var(--ink);background:var(--parchment);font-family:var(--font-display);font-size:9.5px;letter-spacing:0.14em;color:var(--ink);text-transform:uppercase;border-radius:2px;white-space:nowrap;transition:all .2s}
+.voy-sail:hover{background:var(--ink);color:var(--parchment)}
+.voy-row.sailed .voy-sail{border-color:var(--border-strong);color:var(--ink-light)}
+@media(max-width:600px){
+  .voy-row{flex-wrap:wrap}
+  .voy-act{flex-direction:row;width:100%;justify-content:flex-end;gap:10px;align-items:center}
+}
+
+#landfall-overlay{position:fixed;inset:0;z-index:96;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--overlay-bg)}
+#landfall-overlay[hidden]{display:none}
+.landfall-card{width:100%;max-width:500px;max-height:92vh;overflow-y:auto;border-radius:3px;background:var(--parchment-card-bg);border:1.5px solid var(--ink);box-shadow:0 0 0 4px var(--parchment),0 0 0 4.75px var(--gilt),var(--shadow-lg);padding:28px 28px 24px;text-align:center;animation:trial-rise .45s cubic-bezier(0.22,1,0.36,1)}
+.lf-kicker{font-family:var(--font-display);font-size:9px;letter-spacing:0.34em;text-transform:uppercase;color:var(--ink-faint)}
+.lf-seal{font-size:34px;color:var(--gilt);margin:8px 0 2px;animation:vl-beacon 2.6s ease-in-out infinite;display:inline-block;width:56px;height:56px;line-height:56px;border-radius:50%;border:1.5px solid var(--gilt)}
+.landfall-card h2{font-family:var(--font-display);font-size:24px;letter-spacing:0.2em;color:var(--ink);margin:6px 0 2px}
+.lf-sub{font-family:var(--font-display);font-size:11px;letter-spacing:0.16em;color:var(--ink-light);margin-bottom:16px}
+.lf-epi{font-size:13px;line-height:1.75;color:var(--ink);text-align:left;margin-bottom:16px}
+.lf-route{display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--grid-line);border-bottom:1px solid var(--grid-line)}
+.lf-stop{font-size:17px;line-height:1;padding:3px;transition:transform .2s}
+.lf-stop:hover{transform:scale(1.3)}
+.lf-arrow{color:var(--ink-faint);font-size:10px}
+.lf-xp{font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;color:var(--gilt);text-transform:uppercase;margin:12px 0 16px}
+.lf-fin{margin-top:14px;font-size:11.5px;font-style:italic;color:var(--gilt)}

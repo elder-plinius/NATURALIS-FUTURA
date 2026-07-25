@@ -107,6 +107,8 @@ const html = [
   '      <span class="flr">❧</span>',
   '      <button class="rail-btn" onclick="toggleSearch()" title="Search ( / )">Qvære</button>',
   '      <span class="flr">❧</span>',
+  '      <button class="rail-btn" onclick="toggleVoyages()" title="Guided courses across the chart">Itinera</button>',
+  '      <span class="flr">❧</span>',
   '      <button class="rail-btn" onclick="toggleLegend()" title="How to read this chart">Legenda</button>',
   '      <span class="flr">❧</span>',
   '      <button class="rail-btn" id="theme-toggle" onclick="toggleTheme()" title="Day / candlelight">Nox</button>',
