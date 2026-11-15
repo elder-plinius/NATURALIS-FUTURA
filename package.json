@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node --experimental-strip-types --test tests/gilded.test.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "next": "^16.1.6",
