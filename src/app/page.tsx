@@ -195,6 +195,7 @@ function AppContent() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-parchment">
+      {!mapRevealed && <a href="/expedition" className="fixed bottom-6 left-6 z-50 rounded border border-amber-300/60 bg-stone-950 px-5 py-3 text-amber-100 shadow-lg">Play The Gilded Circuit ↗</a>}
       {/* Player HUD */}
       {mapRevealed && <PlayerHUD />}
 
