@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "date": "2026-11-15",
+  "gameplay_baseline": "d3b83c54495c5dff3ffe9b8cab33f4e7df0cfff0",
+  "files": [
+    {
+      "path": "AGENT-HANDOFF.md",
+      "bytes": 6640,
+      "sha256": "1515b5337ad614c211e650e66146408d4f0dbc1df200aaf586748b9c246cd573"
+    },
+    {
+      "path": "ASSETS.md",
+      "bytes": 1419,
+      "sha256": "9d4e3ed7f02e403a5d411769a5aeea3c328a0ce025ba0ceb210476a50844e2e8"
+    },
+    {
+      "path": "FIRST-EXPEDITION.txt",
+      "bytes": 7044,
+      "sha256": "0d78c5e08542012b9d7c53001846dccba27790db5c007f8b445eefba894bb3dc"
+    },
+    {
+      "path": "GAME-DIRECTION.txt",
+      "bytes": 5163,
+      "sha256": "808cae68ecbac55481f9221ac984149097a54ac97caf1666227d4cdf83532c26"
+    },
+    {
+      "path": "PROTOTYPE-REVIEW.md",
+      "bytes": 3483,
+      "sha256": "1bbcfd382731153cd970dca8c001d871a26b6eecac9aa3ef56827559752af7c9"
+    },
+    {
+      "path": "QUALITY-GATES.txt",
+      "bytes": 3885,
+      "sha256": "ce07a7cce5e8bce3db00e524e2585dd314e13efafa63a90c1e8bbf41d1ec6f61"
+    },
+    {
+      "path": "README.md",
+      "bytes": 5340,
+      "sha256": "916ae283af8cb5a42e79466f2865e58009b3c650e2754af04861bda4b16f5845"
+    },
+    {
+      "path": "art/01-listening-grove.png",
+      "bytes": 3042895,
+      "sha256": "f6bfb10401bccc0465b55693a1746bd10d80cc4074f182b383a9afe04c639941"
+    },
+    {
+      "path": "art/02-field-guide.png",
+      "bytes": 2296303,
+      "sha256": "118713d0de32e56f76bcc58da06a23aca28d117064ba90b97712b3813cc3161b"
+    },
+    {
+      "path": "art/03-biomes.png",
+      "bytes": 3356778,
+      "sha256": "e5d75e875bd02189e860d8051ac4bf787a8f008fe6e460e6dcd2d71eaaf059e1"
+    },
+    {
+      "path": "art/04-research-landscapes.png",
+      "bytes": 3580449,
+      "sha256": "16ce19a9299c5fc3bf85cc7ab9611bf68a33ed44ef20fe49fc9f2cafbe7a8db9"
+    },
+    {
+      "path": "art/05-current-prototype.png",
+      "bytes": 426933,
+      "sha256": "9a38b5421227bfda25a9d667eac18d62042e7890d680f0a9139d6b4032caa81d"
+    },
+    {
+      "path": "art/pip-identity-reference.png",
+      "bytes": 1777959,
+      "sha256": "3f44cf2c720841efed3011cd9941f6915a7a0978452a46758ce1d4b0be0f0e88"
+    },
+    {
+      "path": "index.html",
+      "bytes": 3396,
+      "sha256": "8850b656bae073d9d8300573face7db50dcd67c77e45ebb248987924e6c5403a"
+    },
+    {
+      "path": "reference/ART-DIRECTION.txt",
+      "bytes": 15552,
+      "sha256": "7b3b3970be8effe095b785f14e1617fa9edf638eedd372fef644e5d2c06be152"
+    },
+    {
+      "path": "reference/RESEARCH-LANDSCAPES.json",
+      "bytes": 14718,
+      "sha256": "2ce8c23f4aa654b75f2679d326c18cf39f4645f48b6243451a8a5e789106fd49"
+    },
+    {
+      "path": "reference/RESEARCH-LANDSCAPES.txt",
+      "bytes": 13456,
+      "sha256": "c932b9233fad0b2d623da1bcfd355419e0da1536ee50ea95de19931a8c218c72"
+    }
+  ]
+}

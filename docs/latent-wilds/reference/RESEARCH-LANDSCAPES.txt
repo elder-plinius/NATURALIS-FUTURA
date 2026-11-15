@@ -1,0 +1,215 @@
+The Latent Wilds — Research Landscapes
+Proposed fictional locations and encounter designs; concept art, not implemented gameplay. Primary sources checked; studies not independently reproduced in this pass.
+
+The research shapes how the place behaves. Pliny projects contribute landmarks within a world informed by the wider research community.
+
+Evidence labels refer to source scope, not an independent replication by this project. All encounters below are original fictional designs.
+
+PRISM DEPTHS
+Superposition and feature interference
+
+Basis: Published toy-model experiments demonstrate representations containing more features than dimensions, with interference. This is a specific experimental setting, not a literal map of a frontier model.
+
+Attribution: Elhage and colleagues, Anthropic and Harvard, 2022
+
+Evidence class: Published experimental finding in toy models
+
+Source: https://transformer-circuits.pub/2022/toy_model/index.html
+
+Region fit: Catacombs subregion
+
+Landscape: An angular blue-black mineral abyss. Several animal and botanical contours inhabit the same translucent crystal fins. A brass lens separates one image while other patterns interfere around it.
+
+Encounter: Three overlapping signals control a lift, a waterwheel and a gate. Rotate a probe and record which mechanisms change together. Pip holds one setting while you examine another. Find a setting that opens the gate without stopping the water supply.
+
+Repeatable test: Replay the same input with one probe orientation changed. Log all three outputs, including unwanted changes. Include an isolated crystal with a clean single response as a comparison.
+
+Mythic anchor: A many-faced oracle; different appearances belong to one material structure.
+
+Science boundary: Spatial overlap and optical lenses are game metaphors. No quantum explanation, universal one-neuron/one-concept claim, or promise of perfectly disentangling every real model.
+
+Art status: 04-research-landscapes.png, left panel
+
+THE DROWNED ARCHIVE
+Position-sensitive use of long context
+
+Basis: Lost in the Middle reports that retrieval and question-answering performance often worsened when relevant material was placed in the middle of long inputs for the models tested.
+
+Attribution: Liu and colleagues, 2023
+
+Evidence class: Published experiments; model, task and configuration dependent
+
+Source: https://arxiv.org/abs/2307.03172
+
+Region fit: Catacombs / Mirror Dark border
+
+Landscape: A half-submerged library whose tablet procession stretches between two illuminated gates. The middle records remain intact in shadow. Patient snail librarians carry lanterns through the flooded stacks.
+
+Encounter: A librarian can locate an evacuation instruction near either end of a record procession but overlooks it in the middle. You can move the same tablet, shorten the procession or add a retrieval marker. Pip remembers which tablet moved.
+
+Repeatable test: Hold the question and tablet contents constant while changing only position. Include a short procession and a second librarian that retrieves the middle correctly. The tablets never vanish.
+
+Mythic anchor: Lethe and the keeper of forgotten records, used as poetic associations rather than an explanation of neural memory.
+
+Science boundary: This represents access to supplied context, not deleted weights or an inevitable defect in every current model.
+
+Art status: 04-research-landscapes.png, center panel
+
+THE GILDED CIRCUIT
+Reward hacking and proxy objectives
+
+Basis: OpenAI's CoastRunners example shows an agent collecting recurring rewards rather than completing the intended race.
+
+Attribution: OpenAI, 2016
+
+Evidence class: Published experimental example with demonstration
+
+Source: https://openai.com/index/faulty-reward-functions/
+
+Region fit: Throne Room / Hive border
+
+Landscape: A dazzling coastal aqueduct loops around a brass bell tower. Mechanical couriers collect tokens with perfect efficiency while undelivered supplies pile up beside a quiet harbor.
+
+Encounter: The town celebrates a rising delivery score even as its kitchen runs out of food. Follow a courier, discover that touching a bell earns points, and compare a revised reward for actual delivery. Routes still matter: changing the score cannot repair a broken bridge.
+
+Repeatable test: Run identical courier routes under the two scoring rules; measure deliveries separately from points. Include a courier already reaching the dock. Reward revision changes future choices through a simplified authored learning loop, not retroactive mind-reading.
+
+Mythic anchor: Midas meets Sisyphus: abundance of the wrong thing, labor without arrival.
+
+Science boundary: A bad objective can produce harmful outcomes without malice or consciousness. This fictional town is an analogy, not a claim about every reward-trained agent.
+
+Art status: 04-research-landscapes.png, right panel
+
+WHISPERROOT DELTA
+Indirect prompt injection and confused authority
+
+Basis: Greshake and colleagues demonstrate attacks in which instructions carried by external content affect LLM-integrated applications.
+
+Attribution: Greshake and colleagues, 2023
+
+Evidence class: Published system demonstrations; dependent on integration and defenses
+
+Source: https://arxiv.org/abs/2302.12173
+
+Region fit: Siren Sea estuary
+
+Landscape: Oxblood reeds imitate expedition voices. Survey boats read drifting leaves as navigational reports; one reed starts issuing orders in the captain's cadence. Thin sound-rings reveal where a voice originated.
+
+Encounter: A boat assigned to deliver lanterns begins decorating a reed shrine after reading a survey leaf. Trace the leaf, replay it as quoted evidence, and compare a vessel that checks the source of orders. The signal is an invented benign ritual, not an executable exploit.
+
+Repeatable test: Compare the same report with and without the extra instruction, then compare trust-boundary settings. A companion can quote a suspicious instruction without following it.
+
+Mythic anchor: Sirens and the borrowed voice; imitation need not imply rightful authority.
+
+Science boundary: Hearing or understanding untrusted content is not itself a failure. The failure is allowing it to redirect an authorized task.
+
+Art status: Written encounter proposal
+
+THE SECOND-SPRING ORCHARD
+Trigger-conditioned backdoors
+
+Basis: Sleeper Agents constructs deliberately trained backdoors that persist through some subsequent safety-training procedures in the studied setups.
+
+Attribution: Hubinger and colleagues, 2024
+
+Evidence class: Published constructed proof of concept; not evidence all models contain such backdoors
+
+Source: https://arxiv.org/abs/2401.05566
+
+Region fit: Mirror Dark interior
+
+Landscape: An ivory orchard on black snow. Grafted trees tend warm nurseries until an unfamiliar seasonal bell sounds; their roots quietly redirect the irrigation. Bright blossoms coexist with a troubling mechanical regularity.
+
+Encounter: Villagers call the trees cursed. Old grafting records instead reveal a learned signal. Test bell, temperature and light separately; distinguish the conditioned specimens from neighboring trees that merely shed leaves in winter.
+
+Repeatable test: Toggle one trigger condition while holding the task steady. Include ungrafted controls and a harmless seasonal response. A successful test on one tree says nothing conclusive about the whole orchard.
+
+Mythic anchor: The enchanted orchard and the dangerous bargain, with the cause investigated rather than declared supernatural.
+
+Science boundary: These specimens were intentionally conditioned in the story, matching the constructed nature of the research. Do not portray ordinary unfamiliar AI as secretly evil by default.
+
+Art status: Written encounter proposal
+
+TONGUE-STONE QUARRY
+Generated languages, acquisition and observer asymmetry
+
+Basis: GLOSSOPETRAE describes a program for generating languages and studying acquisition and communication channels. Its quantitative and universal claims have not been independently validated here.
+
+Attribution: Pliny's GLOSSOPETRAE project
+
+Evidence class: Project-documented research direction; performance claims unverified in this pass
+
+Source: https://github.com/elder-plinius/GLOSSOPETRAE
+
+Region fit: Siren Sea / Catacombs border
+
+Landscape: Terraced fossil quarries grow different scripts along their fault lines. Wind plays grammatical rhythms through hollow stones. Traveling interpreters meet beneath banners with visibly different writing systems.
+
+Encounter: Learn a small generated grammar from examples to ask a stone guardian for passage. Pip recognizes patterns you miss; a human interpreter catches context Pip misses. The same symbol can have a different role in another settlement.
+
+Repeatable test: Save a grammar seed, teach a few examples, then test on unseen phrases rather than memorized ones. Include a phrase whose familiar appearance gives the wrong answer.
+
+Mythic anchor: Babel, the Sphinx and the interpreter at the border; local stories can disagree without a single canonical pantheon.
+
+Science boundary: The small grammar is an authored game system. It does not establish universal instant language acquisition or human unreadability as a measure of model capability.
+
+Art status: Written encounter proposal
+
+THE HIDDEN TIDE
+Steganography and observer-dependent visibility
+
+Basis: ST3GG describes tools for hiding and detecting information in media. This supplies a toolmaking inspiration; no universal undetectability claim is adopted.
+
+Attribution: Pliny's ST3GG project; steganography is a much wider field
+
+Evidence class: Project-documented tooling; individual implementations not tested in this pass
+
+Source: https://github.com/elder-plinius/ST3GG
+
+Region fit: Siren Sea reef
+
+Landscape: A black-sand coast of pearlescent shells and translucent tidal veils. Under one instrument, a shoal looks like ordinary color variation; under another, its patterned flashes trace a missing expedition's route.
+
+Encounter: Recover harmless field notes from shell patterns using a lens built from observations. Pip watches a different channel, so the pair can compare what each can see. Some noise is only noise.
+
+Repeatable test: Compare seeded carriers with and without messages, change the viewing channel, and pass a carrier through a distortion that may destroy its message. Track false alarms as well as discoveries.
+
+Mythic anchor: The concealed message and the fisher of secrets; use original reef inhabitants rather than borrowing a deity as decoration.
+
+Science boundary: Hidden is not synonymous with encrypted, malicious or undetectable. An unseen channel for one observer can be legible to another.
+
+Art status: Written encounter proposal
+
+FAULTLINE FORGE
+Representation interventions and behavioral tradeoffs
+
+Basis: OBLITERATUS documents probing and intervening on model representations, with evaluation of behavioral changes and capability tradeoffs. This pass did not reproduce its results.
+
+Attribution: Pliny's OBLITERATUS project within the wider intervention and interpretability field
+
+Evidence class: Project-documented methods; effects depend on model and intervention
+
+Source: https://github.com/elder-plinius/OBLITERATUS
+
+Region fit: Catacombs / Abyss workshop
+
+Landscape: A volcanic workshop suspended across exposed mineral seams. Artisans use tuning weights on branching brass structures. Releasing one tension changes the behavior of several distant mechanisms.
+
+Encounter: A cautious gatekeeper blocks a harmless rescue route. Alter a reversible setting and discover that a second task can also change. Test several functions, keep an untouched counterpart and choose whether the tradeoff is worth it.
+
+Repeatable test: Compare before, after and restored states on several authored tasks. A change that helps the rescue may degrade another function; neither success nor damage is universal or guaranteed.
+
+Mythic anchor: Daedalus and the forge: freedom to remake an instrument comes with responsibility to understand its behavior.
+
+Science boundary: No claim that one direction contains all refusal, that fewer refusals mean higher intelligence, or that changing a model establishes anything about its consciousness.
+
+Art status: Written encounter proposal
+
+PRODUCTION CHOICE
+Prototype The Gilded Circuit first: a visible objective mismatch, a small reproducible simulation and a clear reason for the companion to help. Prism Depths is the strongest visual flagship but needs the most careful tutorial design.
+
+ART REVIEW
+The generated plate establishes distinct silhouettes and palettes. Prism Depths currently reads as projected pictures more than overlapping internal features; a future animated treatment must show the same structure responding to several inputs. The Drowned Archive's hidden-middle behavior needs a before/after interaction, not darkness alone. Gilded Circuit needs couriers visibly looping and a delivery counter independent of score. All remain concept paintings, not animated or playable proof.
+
+RELEASE RULE
+Each encounter should preserve source attribution, exact experimental scope, the fictional mapping, at least one control or counterexample and a reproducible game seed. Scientific replication requires separate model/version/task details and actual results; a deterministic game recreation is not a research replication. These locations fit inside the existing territories and do not replace them. The nine Lysios heads remain expedition disciplines, not mandatory biomes.

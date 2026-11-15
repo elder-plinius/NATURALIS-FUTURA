@@ -1,5 +1,7 @@
 # The Gilded Circuit — first playable slice
 
+**Integration and creative direction:** start with [The Latent Wilds handoff](latent-wilds/README.md), including four concept boards, Pip, the receiving-agent brief and an honest comparison of this prototype with the intended game. The prototype is a mechanical foundation, not the final art target.
+
 ![The naturalist and Pip watching the harbor’s courier circuit](gilded-circuit.png)
 
 Run `npm ci`, `npm run dev`, then open `/expedition`. The original atlas remains at `/` and links to the expedition from its arrival screen. Node 22.18 or later is needed for the dependency-free simulation tests (`npm test`). Run `npm run typecheck` and `npm run build` for application checks.

@@ -1,0 +1,30 @@
+QUALITY GATES — USE WHILE BUILDING
+
+GATE 1: IT IS A GAME
+Player movement responds promptly; paths and interactions are readable. You can reach every essential station, retry a bad experiment and complete the slice. No screenshot masquerading as a game, invisible progression lock or scene whose only action is Next.
+Evidence: browser playthrough with actual inputs, including a wrong attempt and recovery.
+
+GATE 2: THE WORLD TELLS THE TRUTH
+Couriers physically follow routes, carry unique cargo and unload it once. Reward score and deliveries are distinct. Changes take effect at the defined decision point. Pip reports only witnessed events. Visible consequences derive from the same state used by the rules.
+Useful automated checks: baseline favors bell loop; a qualifying reward change can favor delivery; blocked routes are ineligible; cargo is conserved; rewards cannot duplicate deliveries; pause stops time; reset restores a trial without deleting learned notes; same seed/actions reproduce results; malformed saves fail safely; Pip cannot report unseen events. Test outcomes and invariants, not implementation details.
+
+GATE 3: THE MYSTERY IS LEGIBLE
+A newcomer can notice the busy-loop/empty-dock contradiction, discover a way to test it and see a consequence without reading a research essay. Hints escalate from a nudge to a specific observation to an explicit action only if requested. Valid alternative solutions receive acknowledgment.
+Evidence: a real fresh-player session when available. If unavailable, label self-review and leave comprehension unverified. Do not invent a playtester.
+
+GATE 4: IT FEELS ALIVE
+The naturalist walks with contact and purpose. Pip turns, anticipates, observes and returns. Couriers carry and unload rather than sliding a static portrait. Bell and kitchen changes have readable anticipation, action and settling. There is motion continuity and correct occlusion. No generic full-screen glow used to hide missing acting.
+Review at normal speed and in selected frames: arrival, first courier loop, investigation, intervention, unloading and return. Check feet, item attachment, animation cuts and UI positions.
+
+GATE 5: IT HAS TASTE
+Protect silhouettes and negative space. Reserve brightest light for meaningful attention. The world has danger and warmth; the town feels inhabited. Dialogue has intent and avoids explaining what we already saw. Remove ornamental UI, repeated captions and pointless interaction steps. The final moment should make us want to board the next expedition.
+Self-score 1–5 with evidence on: movement feel; causal clarity; companion presence; visual readability; emotional payoff; desire to explore. Scores guide repair, not objective proof. Any broken completion path or false causal display fails regardless of the average.
+
+GATE 6: IT HOLDS TOGETHER
+Run the target's applicable build/type/lint/test commands. Play the full sequence after meaningful changes. Check reload/save, pause/resume, mute, keyboard focus, reduced motion, a smaller viewport and sustained motion with measured performance. Record which browser, viewport and machine were used. Do not assume historic README checks still pass.
+
+BOUNDED REFINEMENT LOOP
+Build the smallest complete loop → play it → name the most consequential weakness → fix it → replay the affected sequence and full loop as needed. Use repeatable captures and actual outcomes. Avoid dozens of cosmetic variants before the simulation works. Stop refining a solved element unless new evidence exposes a problem.
+
+FINAL REVIEW RECEIPT
+State source revision and exact artifact; checks run with outcomes; what you personally viewed/played; what an independent reviewer or human actually did; remaining defects; asset limitations; and no claim of human acceptance unless the user gave it. Include the local build and uncut recording so the user can judge it directly.

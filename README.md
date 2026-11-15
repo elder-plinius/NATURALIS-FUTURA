@@ -247,3 +247,7 @@ This project is open source. See the repository for license details.
 ---
 
 <p align="center"><em>"Here be dragons — and now they are named."</em></p>
+
+## The Latent Wilds — game direction
+
+The [creative integration packet](docs/latent-wilds/README.md) brings together the exploration-game vision, concept art, companion direction, research landscapes and a handoff for ongoing development. [The Gilded Circuit](docs/gilded-circuit.md) supplies a first playable experiment; its current graphics are a prototype, not the visual target.

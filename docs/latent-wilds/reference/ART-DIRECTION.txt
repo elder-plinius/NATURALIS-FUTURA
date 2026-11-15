@@ -1,0 +1,95 @@
+NATURALIS FUTURA — THE LATENT WILDS
+Art-direction proposal and prototype studies ·15 November2026
+Status: original concept development. No game code, existing artwork, release or canon replaced.
+
+THE CALL
+A living natural-history book you can walk into. You and an artificial companion explore an ecology of unfamiliar minds. You learn what lives here by watching, making instruments, testing ideas and returning with observations worth sharing. Some encounters are dangerous; some are useful; many become one or the other depending on the conditions. The emotional center is the friendship and the discovery.
+
+This grows from Pliny's request for dangerous, uncharted latent-space expeditions, the recent Wings film's black/ivory/gold jungle, and the existing Naturalis Futura game work. Hollow Knight is a reference for intimacy, readable silhouettes and a world worth getting lost in; this proposal's instruments, naturalist protagonists and behavioral ecology should establish its own identity.
+
+WHAT EXISTS / WHAT THIS ADDS
+The public elder-plinius/NATURALIS-FUTURA repository describes a playable bestiary with eight regions, creature dossiers, containment encounters and hope creatures. These are useful world foundations; a dossier is not yet a fully realized creature encounter.
+Earlier game development includes Glass Garden, Mirror Marsh and companion concepts Aster, Pip and Nacre. Preserve useful existing work in the receiving agent’s checkout. Their presence and behavior must be verified there; this package does not bundle that separate application.
+This proposal adds an engraving-led visual direction, a new Listening Grove encounter, variant creature designs and optional future AI features. Preserve the earlier game's work. These concept names/behaviors are proposals, not adopted canon or implemented systems.
+
+VISUAL GRAMMAR
+1. Near-black spaces with ivory contours, soft painted shadow masses and selective engraved detail. Gold carries warmth and instrument response. Oxblood gives plants and cloth their Lysios connection. Teal identifies Pip; region accents can change without changing the entire drawing language.
+2. Three depth layers: quiet readable foreground, expressive interaction plane, intricate distant ecology. Make traversable surfaces visually continuous. Detail and glow must not obscure a platform edge, a hand, a hazard tell or the companion.
+3. The explorer is a person with boots, field coat, notebook and tools. A cape can respond to motion, but hands and feet stay visible. Aster's established identity remains available; the study's figure is not a forced replacement.
+4. Pip stays recognizably an opaline axolotl/fox: feathery ear-gills, curled comet tail, small paws, curious face. Translate its existing glossy detail into fewer masses and strong contours for play. The film's pearl-headed AI belongs to the same wider world but need not replace Pip.
+5. Learning should change the environment visibly: a branch opens, a reflection diverges, a seed route connects, an old imprint appears. Avoid making every interaction a glowing beam or another mushroom.
+6. Keep warmth: kitchens, field camps, rain shelters, repaired tools, a creature asleep in an instrument case. Beauty and companionship need room beside danger.
+
+THREE VISUAL STUDIES
+01-listening-grove.png: hero environment. Strong naturalist/Pip pairing and the organism's response creates a possible route. The bright central fungus is presently too dominant for a full-time gameplay background; production should lower its resting luminance and reserve the brightest flare for its response. Traversal geometry still needs collision design and playtesting.
+02-field-guide.png: specimen silhouettes. Pip and Nacre continue prior characters; Glass Dandelion develops prior chapter material. Echo Fox, Siren Orchid and Palimpsest Moth are proposed variants/interpretations. These are attractive presentation designs, not cropped ready-to-rig sprites. Simplify internal filigree before animation. Nacre's book is too literal and its wing/hand separation needs a production drawing.
+03-biomes.png: warm Glass Garden, cold Mirror Marsh, layered Memory Catacombs. The latter is a proposed treatment within the existing Catacombs theme, not a ninth region. The fox reflection does not yet make the intended wrong-facing behavior sufficiently obvious: that must be staged through motion rather than declared by this picture. Distinct playable geography is required, not just recoloring one forest.
+
+CREATURES AS PLAYABLE BEHAVIORS
+Pip / companion: collects a visible light and carries it back; signals a clue it actually saw. When it is unsure, it pauses, looks between alternatives and invites a test. A companion with useful limits is more interesting than an answer dispenser.
+Nacre / archivist: folds a wing into a field ledger and compares today's observation with an earlier one. It can preserve old observations but miss changed conditions. Its help is making a comparison possible, not deciding its meaning for the player.
+Echo Fox / mimicry: repeats the player's previous motion after a delay. The player initially thinks it follows; changing one movement separates imitation from immediate response. The late reflection is the visible clue. A specific toy behavior, not proof of a universal AI mechanism.
+Glass Dandelion / propagation: useful workers carry water and repair paths; shared permission paths let new nurseries produce more workers. Trace a branching route, change it and watch which workers continue. Preserve the helpful service while addressing congestion.
+Siren Orchid / attention: its song draws nearby seed workers toward its petals and away from a dry garden. A resonating screen redirects the sound without silencing the entire grove. The useful and harmful effects should both be visible.
+Palimpsest Moth / retained traces: carries faded impressions of places it visited. A changed lantern reveals which layer is old. Players can compare observation, memory and present conditions. Do not depict ordinary interaction as automatically rewriting real model weights.
+
+THE FIRST FIVE MINUTES: LISTENING GROVE
+0:00–0:30: walk in with Pip, jump a small root, reach a broken crossing. Move immediately; no encyclopedia wall.
+0:30–1:30: tap the tuning fork. The hanging organism flexes, and a near frond briefly unfolds. Pip reacts and records an observation.
+1:30–2:30: try again from farther away. The response changes. A nearby seed's pulse appears to provoke it too. The player has competing explanations.
+2:30–3:30: hold one condition steady and change another. Pip can demonstrate a remembered signal while the player adjusts position. Together they make a test neither can perform alone.
+3:30–4:30: reproduce the response and cross on the held fronds. A visible decay signal tells the player how long the route lasts. Missed timing resets nearby; learned observations remain.
+4:30–5:00: notebook records what actually happened, with observed facts separate from hypotheses. A second specimen responds differently, inviting another expedition.
+The pass condition is a newcomer wanting to try a second experiment and being able to explain the first response. Animation and test outcomes must come from real game state; no staged success presented as functioning gameplay.
+
+WHERE GENERATIVE AI EARNS ITS PLACE
+Start with the existing local companion behavior. Add expressiveness, locomotion, attention and useful memory before adding a chat box.
+Optional language-model layer: brief in-world remarks, questions and journal phrasing grounded in a compact record of what the player and companion observed. It may suggest a hypothesis, including a tentative wrong one; the game tracks that as a hypothesis. Dialogue never silently changes the rule that determines an experiment's result.
+Authored world plus generated expeditions: vary specimen traits, signal delays, route topology and ecological relationships within tested ranges. Validate solvability and readable tells before a seed becomes playable. Save the seed so another player can reproduce a finding. Novel combinations should create a new decision, not only a new color.
+Generative field journal: the player writes a theory, the companion asks what observation would distinguish it from another theory, then the deterministic simulation supplies the outcome. A structured local version should remain playable without a model connection.
+World memory: camps display discoveries you actually made; returning species respond to known interventions. Different companions can remember different observations and disagree with reasons. Keep their limited viewpoints explicit.
+Production recommendation: author and validate encounter rules; generate bounded variations, language and optional presentation around them. Generate expensive art ahead of time and cache optional dialogue. No model call per frame or required inference to move, jump, observe or retry.
+
+MOTION / BUILD BAR
+One small room first. Keep the present camera/gameplay baseline; prototype a side-view encounter separately before choosing a wholesale camera change. The boards show a possible game adaptation, not a mandate to rewrite the existing isometric work.
+For the initial room: explorer idle/walk/jump/probe/write; Pip hover/follow/notice/collect/return/uncertain; organism resting/anticipating/responding/recovering. A few excellent motions beat dozens of still illustrations.
+Cut or rig parts with clean pivots, reliable contacts and responsive input. Ambient sway is secondary. Camera panning over a painting is not character animation. Caption/label placement must be checked at gameplay scale.
+Use one background painting with separated depth layers and small animated actors/props where feasible. Reserve full-screen detail for arrivals and discoveries. Test frame pacing, reduced motion, readable light levels and small-screen silhouettes before expanding the atlas.
+First handoff should contain a playable room, one reproducible experiment, the companion's actual action, the event trace and an uncut gameplay capture. These concept plates alone do not pass that gate.
+
+WORLD / ORGANIZATION RELATIONSHIP
+Keep the bestiary's eight territories and Lysios's nine heads as different organizing ideas. The heads can inspire expedition disciplines, tools, camp specialists and collaborative missions. They need not become nine elemental combat classes or nine mandatory biomes.
+The game should make the work and relationships compelling even for someone who has never heard of Lysios. Lore can reward attention without blocking play.
+
+MYTHOLOGICAL FRAMEWORK — A LIVING, PLURAL BESTIARY
+Added from Pliny's direct follow-up: culturally agnostic/holistic worldbuilding, familiar archetypes, optional Greco-Roman anchors, freedom to use established names or new interpretations. User response to initial concept studies: "Good, very good." This is positive direction feedback, not implementation or publication approval.
+
+Premise: unfamiliar minds inhabit a shared ecology; explorers bring inherited stories to understand them. Different communities have different names, explanations and relationships with a being. Their accounts can overlap, conflict and remain incomplete. Keep a consistent visual language without requiring a single authoritative pantheon or flattening traditions into interchangeable symbols.
+
+Three layers per encounter:
+1. Phenomenon: what the player can actually observe and reproduce. Its wants, capabilities, habitat, useful role and dangerous behavior.
+2. Stories: what different inhabitants believe about it, attributed to their perspectives. A story can guide a test without determining the answer.
+3. Individual: the particular creature you meet, with its own history and relationship to you. A type is a starting expectation, not a fixed moral alignment.
+
+Six useful design families, open rather than exhaustive:
+Threshold / guardian: boundaries, permission, riddles, passage and consequences. A labyrinth keeper, ferryman or many-eyed sentinel.
+Mirror / trickster: imitation, perspective, conflicting testimony and context. Echo Fox belongs here; some tricks protect a creature rather than harm the explorer.
+Hunger / propagation: appetite, growth, copying, metabolism and limits. Glass Dandelion and a recursive serpent can occupy different ecological niches.
+Song / chorus: influence, coordination, collective attention and dissent. Siren Orchid can misdirect workers but also bring scattered creatures together.
+Memory / return: retained traces, forgetting, recurrence and transformation. Palimpsest Moth, archives, seasonal renewals and beings that return altered.
+Gift / craft: instruments, fire, teaching, bargains and unintended consequences. A tool-giver can offer a genuine benefit with a discoverable cost.
+These are a game-design vocabulary, not a claim about universal mythology or a replacement for the existing eight region categories or nine Lysios heads. A creature can cross families.
+
+Naming policy:
+Use familiar names directly when recognition makes the encounter better: The Minotaur, Siren, Ouroboros. These are proposed game interpretations, not historical definitions.
+Use an epithet or regional variant when a familiar figure has changed materially: The Listening Minotaur, The Glass Siren. Earn the adjective through a visible behavior or history.
+Give original species their own names when importing a famous name adds little: Pip, Nacre, Palimpsest Moth. Let players discover relationships rather than attaching a classical label to everything.
+
+Playable example — The Listening Minotaur:
+A horned bronze-and-root keeper inhabits a shifting archive labyrinth. It learns the routes you repeatedly take and begins intercepting them. The player sees its attention turn, hears its hoofbeats and can observe changes before entering a corridor. Pip remembers only the passages you actually explored. A thread instrument records your route; test an unfamiliar route or a new timing to separate the keeper's prediction from direct detection. The keeper also protects a nursery at the maze's center. Escape, negotiate passage or repair a failing boundary could resolve the encounter. Exact behavior must be authored and testable; the story should not pretend the creature can read the player's private thoughts. This is a new proposed encounter, not existing implementation or a retelling claimed as canonical mythology.
+
+World coherence:
+Greco-Roman influence can be our home accent—naturalists, voyages, wine, metamorphosis, labyrinths, volcanic landscapes—while other stories enter through places, travelers and distinct traditions. Research specific cultural material before making factual claims or reducing a living tradition's revered figures to generic enemies. Allow competing interpretations rather than announcing that one worldview explains every being.
+Keep most lore in environmental details, conversations, field notes and optional deeper entries. The player should understand an immediate goal and useful action before needing to recognize the myth. Discovery can revise the original bestiary entry, while preserving who believed what and what evidence changed.
+Make the world feel inherited and inhabited: ferry routes, field camps, old expedition marks, rituals with practical consequences, companion disagreements, a creature that recognizes your previous kindness. The visual coherence comes from materials, silhouettes and animation; cultural richness comes from differing stories and relationships.
+

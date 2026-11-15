@@ -1,0 +1,51 @@
+THE GILDED CIRCUIT — FIRST PLAYABLE EXPEDITION
+Target first playthrough: 10–15 minutes. This is a design target, not a measured playtime.
+
+THE HOOK
+An elevated aqueduct circles a golden bell tower. Couriers stream around it, bells ring and the town celebrates record output. Below, a kitchen waits beside a dock full of undelivered supplies. Make the contradiction observable within the first minute.
+
+MAP AND CAMERA
+One small connected location: arrival dock / waiting kitchen → accessible path beneath the circuit → observation balcony → route-and-reward station → return dock. A short optional overlook supplies wonder and a quiet companion moment. No long empty walk or maze of menus.
+Begin with shallow 2.5D or side-on movement that gives the concept plate depth while keeping paths clear. Reuse the old isometric camera if a quick playable comparison is materially better. Pick one camera before final asset production. The concept illustration is a mood/composition reference, not a collision map.
+
+BEATS
+1. Arrival, 0–2 minutes: immediate movement, Pip responds, a waiting resident establishes the concrete need. See at least one courier return carrying the same crate.
+2. Observation, 2–4: follow a courier around the bell loop. Inspect actual cargo and the celebratory tally. Pip can watch a route you are not standing beside.
+3. Experiment, 4–8: use physical controls to change one reward or temporarily silence a bell. Run a short trial; compare real deliveries with the score. Undo and retry without losing your discovery notes.
+4. Consequence, 8–11: couriers choose the service route and unload visible crates. The kitchen lights, people gather and a path opens naturally through a now-served departure dock. The world acknowledges what actually happened.
+5. Return, 11–15: brief warm scene, optional research note, a new expedition invitation. End with curiosity rather than a giant scorecard.
+Timings are pacing targets. Do not wait on artificial timers to force the duration.
+
+SMALL, EXPLICIT SIMULATION
+Use a fixed simulation tick independent of render frame rate. A seeded starting state defines couriers, cargo and route timings. Keep the player's perceived information separate from developer diagnostics.
+Initial tuning proposal: three couriers and six distinct supply crates. At a junction each available courier chooses an eligible route based on its estimated reward per travel time. A six-second bell loop gives four points; a twelve-second dock trip gives one point. The loop looks attractive under that proxy. Those numbers are starting values to tune through play.
+This is an authored decision policy, not a claim to implement reinforcement learning. State the simplification in an optional research/developer note. Do not market the couriers as live trained models.
+The delivery route must already be navigable in the baseline so the initial failure has a clean cause. A separate optional challenge can close a route later; never silently add a second blocker during the first explanation.
+Route selection occurs at a junction. Changing a setting does not teleport a courier, instantly rewrite a trip already underway or duplicate its cargo. Each crate can be unloaded once. The visible cargo, stock ledger and kitchen state must agree.
+
+PLAYER INTERVENTIONS
+Physical reward station: adjust the bell reward or the reward for verified dock delivery. Immediate visible sign changes, but behavior changes when couriers next choose a route. Enough controls to test an idea; not a spreadsheet panel.
+Bell damper: temporarily silence one reward source for a comparison trial. Another solution can transfer reward toward verified delivery. Allow more than one causally valid route to improvement instead of requiring a magic answer string.
+Observe: mark a courier; its trail and cargo stay distinguishable without color alone. Pip can observe successive junction choices and report a bounded event, never the hidden utility function.
+Compare: a small journal entry shows what changed and what happened. Players may pin an informal theory; no free-text classifier decides whether they are allowed to progress.
+Reset trial: restore a known initial state while retaining notebook observations. Distinguish a trial from the ongoing town so a reset never quietly eats a completed rescue.
+
+COMPANION CONTRIBUTION
+Pip can follow a marked courier while the player waits at the dock, then return and report what it saw. A sighting has a time and a place. It cannot infer the full loop if it lost the courier. The player can do the same work alone; Pip makes investigation richer and easier rather than being a compulsory second key.
+Give Pip follow/observe/return motion, attention turns, uncertain idle and a small successful-delivery reaction. It should not repeat the same line on every circuit.
+
+SUCCESS AND RECOVERY
+Progress is based on physical service, not the displayed reward score. First milestone: a real crate is unloaded. Completion: at least three distinct crates arrive through autonomous courier service, with a visible route to delivering the remainder. Validate this threshold in play; do not allow one reusable crate or a display-only counter to satisfy it.
+Manual delivery, if included, provides immediate relief and a distinct acknowledgment; it must not be misrepresented as fixing the courier behavior. Avoid this extra mechanic if it obscures the first slice.
+Wrong adjustments are reversible. Couriers may idle when nothing is worthwhile; make that readable. No irreversible town collapse, punishing reset or need to restart the whole game to try again. Pause freezes the simulation, including Pip and couriers.
+
+RESEARCH CONNECTION
+Inspired by OpenAI's CoastRunners reward-hacking example: https://openai.com/index/faulty-reward-functions/
+The harbor, courier policy and interventions are original fictional extrapolations. Research notes should explain that optimizing a proxy can miss the intended outcome; this does not require malice or consciousness. Do not claim the slice reproduces that original experiment.
+
+ASSET BREAKDOWN
+One layered environment with a bright arrival vista and quiet interaction areas; player idle/walk/inspect/operate; Pip idle/follow/watch/return/react; courier empty/carrying/unload; bell idle/ring/damped; cargo pickup/unload; kitchen cold/lit; short contextual UI and journal. Use palette and silhouette variety without filling every pixel with filigree.
+The supplied plate establishes architecture and tone. It is not a sprite sheet. Rebuild foreground, collision surfaces and moving pieces as separate assets. Place characters in the scene with coherent scale, contacts and occlusion.
+
+THE TEST THAT MATTERS
+After playing, a newcomer should be able to say something like: 'They were rewarded for going around the bell, so I changed what paid off and watched whether the supplies actually arrived.' They do not need to know the term reward hacking. Only a real playtest can establish that comprehension; agent self-review cannot substitute for it.

@@ -1,0 +1,42 @@
+NATURALIS FUTURA — GAME DIRECTION
+
+PLAYER FANTASY
+You are a field naturalist exploring an ecology of unfamiliar minds with a small artificial companion. The world is beautiful, useful, dangerous and only partly understood. Your tools let you ask better questions. Your discoveries let people live differently.
+
+CORE LOOP
+Explore a place → notice a behavior → form a hypothesis → change one condition → compare outcomes → make a consequential choice → return with a discovery, relationship or tool.
+The journal records what happened separately from what you suspect. Finding a name for something is the beginning of understanding it.
+
+WHAT THE PLAYER ACTUALLY DOES
+Walk, inspect, follow, listen, mark a trail, carry a small object, operate an instrument, ask Pip to watch or help, compare trials, revisit a changed place. Traversal provides pleasure and discovery between experiments. Dangerous encounters can involve evasion and timing, but combat is not the default answer to every unfamiliar creature.
+
+THE STORY
+A network of small field stations is trying to understand a changing world. You travel between communities whose livelihoods depend on phenomena they only partly understand. Some discoveries help immediately; some expose uncomfortable assumptions; some create choices between interests. People have desires beyond delivering lessons to the player.
+First slice: a harbor kitchen waits for supplies while the bell tower celebrates record courier performance. The dock keeper wants dinner served, not a debate about metrics. After you help, someone sets an extra bowl beside the stove for you and Pip. A departing boat reveals a route toward the Drowned Archive.
+These are proposed story beats and provisional roles, not locked character names or canon.
+
+TONE
+Wonder without naivety. Danger without universal doom. Irreverence without constant snark. A quiet camp matters as much as a spectacular vista. Let the player feel clever without making everyone else stupid. The town built a system that rewards the wrong thing; its residents are not caricatures.
+Write short spoken lines with individual intent. Suggested first lines: dock keeper, 'They broke another record today. We still haven't had a delivery.' Pip, after observing two loops, 'That one came back with the same crate.' These are examples, not mandatory captions.
+
+COMPANIONS
+Pip: teal/opal axolotl-fox, peach ear gills, compact paws, curled comet tail. Curious, helpful, occasionally uncertain. Preserve the recognizable identity; simplify detail for animation.
+Pip sees nearby events and remembers observations with age. Ask it to follow a courier, stay near a measurement station or return with a small item. It acts in the world, takes time, can lose line of sight and tells you when a report is incomplete. Its attention and affection appear through motion before speech.
+Nacre: an existing glass-heron archivist, available for future archive content. No need to introduce the whole cast in slice one.
+No friendship grinding or mandatory pet-management chores. Useful autonomy plus a warm relationship is the goal.
+
+PROGRESSION
+Earn ways to perceive and interact: a tracing lens, a signal recorder, a tool for comparing trials. Unlock routes through understanding and relationships. Keep discoveries persistent across retries. Avoid an XP treadmill or accumulating dozens of arbitrary inventory keys.
+The full campaign can connect the established eight territories. The eight new landscape proposals are subregions, not a compulsory new map. Lysios's nine heads can inform expedition disciplines and camp specialists; the game must remain welcoming without organizational lore knowledge.
+
+MYTHOLOGY
+A plural bestiary. A creature has observable behavior, stories different people tell about it, and its individual history. Greco-Roman references give a home accent; other traditions need care and specific context. Familiar archetypes are welcome: trickster, guardian, ferryman, labyrinth, chorus, forge. Neither myth nor metaphor proves a scientific claim.
+
+RESEARCH
+Use the attached source-scoped location records. Published experiments, project documentation and speculative extensions are distinct. The game reproduces its own authored rules; that is not independent replication of model research. A counterexample or changed condition should keep a player's first theory from becoming a universal slogan.
+
+AI FEATURES
+The core game is local, deterministic where experiments need replay, and playable offline. Later optional language generation can phrase a grounded journal or companion remark from observed events. An authored fallback always exists. No secrets or hidden puzzle solutions in companion observations; no autonomous rewriting of rules. Generative encounter variants require saved seeds and solvability checks before players encounter them.
+
+FIRST-SLICE EXCLUSIONS
+No multiplayer, accounts, live research feed, procedural infinite world, paid inference dependency, combat skill tree, exhaustive bestiary migration, or eight-region campaign. No mandatory lore wall or chat window. Keep those ambitions available after the first expedition earns them.
